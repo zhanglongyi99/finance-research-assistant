@@ -49,6 +49,7 @@ AI_REASONING_EFFORT=medium
 ```
 
 默认模型按当前规划设为 `gpt-5.5`，推理强度为 `medium`。如果第三方网关只支持 Chat Completions，将 `AI_WIRE_API` 改为 `chat`。
+`AI_SUMMARY_DIRECT_MAX_CHARS` 控制单次直发正文长度，默认 `18000`。超过该长度的长文会按 `AI_SUMMARY_CHUNK_CHARS` 分段交给 API 提取要点，再由 API 汇总成最终深度总结，避免单次请求过大导致网关断连。
 
 测试连通性：
 

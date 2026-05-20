@@ -354,7 +354,7 @@
   <main>
     <header>
       <h1>财经助手项目总控台</h1>
-      <p class="subtitle">更新时间：2026-05-20 17:00（Asia/Shanghai）。本文件是后续跨窗口交接、进度同步、需求整理和产品方向沉淀的第一入口。</p>
+      <p class="subtitle">更新时间：2026-05-20 17:19（Asia/Shanghai）。本文件是后续跨窗口交接、进度同步、需求整理和产品方向沉淀的第一入口。</p>
       <p class="note"><strong>当前定位：</strong>一个以研报知识库为基础、以每日 AI 简报和引用式问答为核心的个人财经研究助手。当前开发主线仍以微信公众号研报为核心，行情、新闻、提醒和实时数据先作为未来模块预留。</p>
     </header>
 
@@ -577,7 +577,7 @@
       <h2>下一步计划</h2>
       <ol>
         <li><strong>P0：GitHub 仓库首轮复查。</strong> 在网页端确认 README、源码、配置模板和文档展示正常，并确认未包含运行数据或密钥。</li>
-        <li><strong>P0：AI 总结质量复核。</strong> 先人工查看已生成的 5 条 AI 深度总结，确认格式、质量和费用边界，再决定是否批量处理更多文章。</li>
+        <li><strong>P0：AI 总结质量复核。</strong> 长文已改为“分块提取 + 最终合成”，先人工查看已生成的 5 条 AI 深度总结，确认格式、质量和费用边界，再决定是否批量处理更多文章。</li>
         <li><strong>P0：今日简报模型化。</strong> 基于 <code>ai_summary</code> 生成更像投研 briefing 的首页摘要，同时保留本地摘要作为失败兜底。</li>
         <li><strong>P1：研报问答原型。</strong> 建立基础检索、文章级引用回答和近期对话历史保存。</li>
         <li><strong>P1：平台 UI 改造。</strong> 将现有看板升级为简报 / 问答 / 资料库的静态或 Web 应用结构。</li>
@@ -608,6 +608,8 @@
     <section>
       <h2>更新日志</h2>
       <div class="timeline">
+        <div>2026-05-20 17:19</div>
+        <div>修复长文 AI 总结误判截断问题：原先只发送前 <code>12000</code> 字符，长报告会让模型误以为材料中断；现改为长文分块摘要后再合成最终总结，并重新生成华创宏观中期策略报告的 AI 总结。</div>
         <div>2026-05-20 17:00</div>
         <div>完成 AI 深度总结最小闭环：数据库新增 <code>ai_summary</code>、<code>ai_summary_model</code>、<code>ai_summary_at</code> 字段，新增 <code>deep-summarize</code> 命令，用 <code>gpt-5.5</code> 生成 5 条深度总结，并刷新主看板优先展示 AI 总结。</div>
         <div>2026-05-20 16:52</div>
