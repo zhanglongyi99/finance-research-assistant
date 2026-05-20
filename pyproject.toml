@@ -1,0 +1,8 @@
+[project]
+name = "research-assistant"
+version = "0.1.0"
+description = "Local-first finance research assistant for WeChat research ingestion, summaries, daily briefings, and a static dashboard."
+requires-python = ">=3.12"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]

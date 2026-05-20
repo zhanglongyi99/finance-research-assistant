@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>高质量卖方研报查看渠道汇总</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #5f6b7a;
+      --line: #d9e1ea;
+      --paper: #ffffff;
+      --soft: #f5f7fa;
+      --accent: #126c68;
+      --accent-2: #8a4f18;
+      --danger: #9f2f2f;
+      --good: #246b38;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      line-height: 1.62;
+      color: var(--ink);
+      background: #eef2f5;
+    }
+
+    main {
+      width: min(1120px, calc(100% - 32px));
+      margin: 32px auto;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      box-shadow: 0 14px 40px rgba(20, 31, 48, 0.08);
+    }
+
+    header {
+      padding: 36px 40px 24px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fbfcfd, #ffffff);
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: 30px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    section {
+      padding: 28px 40px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    section:last-child {
+      border-bottom: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+      line-height: 1.35;
+    }
+
+    h3 {
+      margin: 24px 0 10px;
+      font-size: 17px;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      border-bottom: 1px solid rgba(18, 108, 104, 0.35);
+    }
+
+    a:hover {
+      border-bottom-color: var(--accent);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .note,
+    .card {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      padding: 16px;
+      border-radius: 8px;
+    }
+
+    .note strong {
+      color: var(--danger);
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 0 6px 6px 0;
+      padding: 3px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 4px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: #eef5f4;
+      color: #183b39;
+      font-weight: 700;
+    }
+
+    tr:nth-child(even) td {
+      background: #fbfcfd;
+    }
+
+    ul,
+    ol {
+      margin: 8px 0 0 20px;
+      padding: 0;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #edf1f5;
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.95em;
+    }
+
+    .schedule {
+      display: grid;
+      grid-template-columns: 140px 1fr;
+      gap: 0;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .schedule div {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .schedule div:nth-child(odd) {
+      background: #eef5f4;
+      font-weight: 700;
+      color: #183b39;
+    }
+
+    .schedule div:nth-last-child(-n+2) {
+      border-bottom: 0;
+    }
+
+    .priority {
+      color: var(--good);
+      font-weight: 700;
+    }
+
+    .warning {
+      color: var(--danger);
+      font-weight: 700;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    @media (max-width: 760px) {
+      main {
+        width: 100%;
+        margin: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+
+      header,
+      section {
+        padding: 24px 18px;
+      }
+
+      h1 {
+        font-size: 25px;
+      }
+
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      table {
+        display: block;
+        overflow-x: auto;
+        white-space: normal;
+      }
+
+      .schedule {
+        grid-template-columns: 1fr;
+      }
+
+      .schedule div:nth-child(odd) {
+        border-bottom: 0;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      main {
+        width: 100%;
+        margin: 0;
+        border: 0;
+        box-shadow: none;
+      }
+
+      a {
+        color: var(--ink);
+        border-bottom: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>高质量卖方研报查看渠道汇总</h1>
+      <p class="subtitle">覆盖图中提到的宏观、策略、金工、固收团队；按免费版、付费版和定时查看流程整理。更新时间：2026-05-19。</p>
+    </header>
+
+    <section>
+      <h2>图中团队拆解</h2>
+      <div class="grid">
+        <div class="card">
+          <strong>宏观</strong>
+          <p>广发郭磊；Morgan Stanley Robin Xing 团队、Laura Wang；华创张瑜；刘郁。</p>
+        </div>
+        <div class="card">
+          <strong>策略</strong>
+          <p>华泰何康、兴业张启尧、广发刘晨明。</p>
+        </div>
+        <div class="card">
+          <strong>金工</strong>
+          <p>华泰何康，重点看量化策略、行业轮动、资产配置、ETF 组合等。</p>
+        </div>
+        <div class="card">
+          <strong>固收</strong>
+          <p>华泰张继强、刘郁；重点看利率债、信用债、转债、地方债和债市策略。</p>
+        </div>
+      </div>
+      <p class="note"><strong>核心判断：</strong>免费渠道可以稳定跟踪公开观点和部分 PDF，但很难完整覆盖外资行正式研报、券商客户专供深度、专家会纪要、路演材料和盘中即时快评。</p>
+    </section>
+
+    <section>
+      <h2>免费版渠道清单</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>渠道</th>
+            <th>具体看哪里</th>
+            <th>对应内容</th>
+            <th>可能遗漏</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>微信公众号</td>
+            <td>微信搜并星标：<code>郭磊宏观茶座</code>、<code>广发证券研究</code>、<code>晨明的策略深度思考</code>、<code>华创宏观</code>、<code>华泰研究</code>、<code>兴证策略</code>、<code>华泰固收</code>、<code>华西研究</code>。</td>
+            <td>郭磊、刘晨明、张瑜、何康、张启尧、张继强、刘郁等团队的核心观点、快评、周报摘要和部分图表。</td>
+            <td>完整 PDF、图表附录、模型细节、客户专供内容；部分公众号只发摘要。</td>
+          </tr>
+          <tr>
+            <td>券商官方免费入口</td>
+            <td>广发、华泰、兴业、华创、华西证券 APP；官网研究所；客户经理提供的研究服务号或小程序。</td>
+            <td>较正式的报告标题、摘要、部分 PDF；尤其适合看对应券商自己的团队。</td>
+            <td>可能需要开户、适当性认证；普通客户和机构客户看到的内容不一定一样。</td>
+          </tr>
+          <tr>
+            <td>慧博投研免费页</td>
+            <td><a href="https://www.hibor.com.cn/">hibor.com.cn</a>，搜分析师、机构或报告标题。</td>
+            <td>大量国内券商研报标题、摘要、部分下载；适合查历史报告和确认发布日期。</td>
+            <td>免费下载数量有限；热门或新报告可能需要会员；部分内容会滞后。</td>
+          </tr>
+          <tr>
+            <td>东方财富研报/PDF</td>
+            <td>东方财富研报中心，或搜索引擎搜 <code>分析师名 机构名 pdf.dfcfw.com</code>。</td>
+            <td>个股、行业、宏观、策略 PDF；适合补漏完整文件。</td>
+            <td>覆盖不稳定；不是按分析师完整归档。</td>
+          </tr>
+          <tr>
+            <td>新浪财经/金麒麟研报</td>
+            <td>搜 <code>分析师名 + 研报</code>，例如 <code>张瑜 华创宏观 新浪财经</code>。</td>
+            <td>券商研报精选、分析师公开观点转载、访谈。</td>
+            <td>多为二次摘要，不一定有完整原文；标题可能经过媒体化处理。</td>
+          </tr>
+          <tr>
+            <td>证券时报/中证报/上证报/财联社</td>
+            <td>搜 <code>分析师名 + 机构名</code>，重点看市场快评和会议报道。</td>
+            <td>重大观点、会议发言、政策解读和公开市场评论。</td>
+            <td>通常不是完整研报，只是新闻化摘编。</td>
+          </tr>
+          <tr>
+            <td>免费研报索引站</td>
+            <td>悟空智库、价值目录、研报社等，搜标题或机构。</td>
+            <td>公众号研报整理、目录、摘要、历史线索。</td>
+            <td>完整性、版权和下载稳定性参差；适合作为找标题的辅助入口。</td>
+          </tr>
+          <tr>
+            <td>Morgan Stanley 公开内容</td>
+            <td><a href="https://www.morganstanley.com/asiaresearch/country-and-region/china.html">Morgan Stanley Asia Research</a>、Thoughts on the Market 播客、CNBC/SCMP 等媒体转载。</td>
+            <td>Robin Xing、Laura Wang 的公开观点、访谈、市场展望。</td>
+            <td><span class="warning">完整正式研报最容易遗漏</span>，通常需要 Morgan Stanley Research 权限或机构账户。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>免费版定时查看流程</h2>
+      <div class="schedule">
+        <div>每天 8:30-9:15</div>
+        <div>看微信公众号星标号、财联社/证券时报/新浪财经快讯。重点抓宏观、策略、固收快评：郭磊、张瑜、张启尧、刘晨明、张继强。</div>
+        <div>每天 16:00-18:30</div>
+        <div>收盘后再看一次公众号和新闻转载。很多策略、固收、金工周频或日频观点会在收盘后发布。</div>
+        <div>每周日晚上/周一早上</div>
+        <div>集中搜周报、月报和策略展望。用慧博、东方财富、微信搜一搜、搜索引擎补齐完整 PDF。</div>
+        <div>每月初/数据发布日</div>
+        <div>PMI、社融、通胀、进出口、财政数据、政治局会议、美联储议息后，重点看宏观和大类资产快评。</div>
+      </div>
+
+      <h3>微信设置</h3>
+      <ol>
+        <li>把相关公众号全部星标。</li>
+        <li>建一个微信收藏夹或标签，命名为 <code>研报</code>。</li>
+        <li>看到标题先收藏，周末统一读，不要被每天的推送节奏拖着走。</li>
+        <li>微信搜一搜直接用 <code>分析师名 + 最新</code>，通常比翻订阅号更快。</li>
+      </ol>
+
+      <h3>搜索关键词模板</h3>
+      <p>
+        <span class="tag">郭磊 广发宏观 周报</span>
+        <span class="tag">张瑜 华创宏观 快评</span>
+        <span class="tag">张启尧 兴证策略 周报</span>
+        <span class="tag">刘晨明 广发策略 景气</span>
+        <span class="tag">何康 华泰金工 行业轮动</span>
+        <span class="tag">张继强 华泰固收 周报</span>
+        <span class="tag">刘郁 固收 信用债</span>
+      </p>
+
+      <h3>站内搜索模板</h3>
+      <ul>
+        <li><code>site:hibor.com.cn 郭磊 广发宏观</code></li>
+        <li><code>site:finance.sina.com.cn 张瑜 华创宏观</code></li>
+        <li><code>site:stcn.com 刘晨明 广发策略</code></li>
+        <li><code>site:dfcfw.com 何康 华泰证券 金工</code></li>
+        <li><code>site:morganstanley.com Robin Xing China outlook</code></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>付费版渠道清单</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>档位</th>
+            <th>推荐渠道</th>
+            <th>适合谁</th>
+            <th>能看到什么</th>
+            <th>仍可能遗漏</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>低成本</td>
+            <td>慧博会员或类似研报会员站</td>
+            <td>个人投资者、学生、轻量研究</td>
+            <td>大量国内券商 PDF、历史报告、按分析师检索。</td>
+            <td>外资行、最新客户专供、专家会纪要不一定全。</td>
+          </tr>
+          <tr>
+            <td>低成本/半官方</td>
+            <td>券商开户 + 官方研究服务 + 客户经理</td>
+            <td>重点跟踪几家券商团队的人</td>
+            <td>广发、华泰、兴业、华创、华西等自家研究报告，更新通常快。</td>
+            <td>跨券商覆盖不全；高等级内容可能看客户级别。</td>
+          </tr>
+          <tr>
+            <td>中高成本</td>
+            <td>东方财富 Choice、同花顺 iFinD</td>
+            <td>专业个人、小机构</td>
+            <td>研报库、行情、财务、估值、行业比较、数据导出；比单纯研报站更适合做系统研究。</td>
+            <td>外资行和部分卖方专供内容仍可能有限。</td>
+          </tr>
+          <tr>
+            <td>高成本</td>
+            <td><a href="https://www.wind.com.cn/portal/zh/RPP/index.html">Wind 研报平台</a></td>
+            <td>机构、重度研究用户</td>
+            <td>国内外券商、咨询、评级、公众号、专家会议等；检索、提醒、归档能力强。</td>
+            <td>成本高；具体能看哪些库取决于套餐和权限。</td>
+          </tr>
+          <tr>
+            <td>外资行专项</td>
+            <td>Morgan Stanley Research/机构经纪服务</td>
+            <td>需要 Robin Xing、Laura Wang 原文的人</td>
+            <td>大摩正式中国宏观、中国策略、全球资产配置等研究报告。</td>
+            <td>通常需要机构账户或合格客户权限，个人较难直接开。</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>付费版推荐组合</h3>
+      <ul>
+        <li><span class="priority">只看国内团队：</span>券商官方研究服务 + 慧博会员。</li>
+        <li><span class="priority">希望更全且可做研究：</span>Choice 或 iFinD + 慧博会员 + 券商客户经理。</li>
+        <li><span class="priority">机构级完整方案：</span>Wind + 券商研究服务 + Morgan Stanley Research。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>推荐执行方案</h2>
+      <h3>先用免费版跑两周</h3>
+      <ol>
+        <li>星标公众号，建收藏夹。</li>
+        <li>每天早晚各看 15 分钟。</li>
+        <li>每周固定搜一次 PDF 和周报。</li>
+        <li>记录哪些报告总是找不到完整原文。</li>
+      </ol>
+
+      <h3>再决定是否付费</h3>
+      <p>如果缺口主要是国内券商完整 PDF，优先开慧博会员或找券商研究服务。如果缺口是数据联动、研报检索、行业比较，考虑 Choice/iFinD。如果缺口是大摩 Robin Xing/Laura Wang 的完整外资行报告，只能考虑 Morgan Stanley Research 或机构服务。</p>
+
+      <p class="muted">参考来源：慧博投研、Wind 研报平台、Morgan Stanley Asia Research、广发证券研究业务介绍等公开页面。</p>
+    </section>
+  </main>
+</body>
+</html>

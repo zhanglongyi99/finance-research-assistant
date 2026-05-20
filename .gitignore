@@ -1,0 +1,30 @@
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+
+# Local secrets and machine-specific config
+.env
+.env.*
+!.env.example
+config/*.local.yaml
+config/*cookies*.json
+config/wxmp_cookies.json
+
+# Runtime data and generated artifacts
+data/
+output/
+pdfs/
+logs/
+
+# OS and editor noise
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/

@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>财经助手项目交接文档</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #5f6b7a;
+      --line: #d9e1ea;
+      --paper: #ffffff;
+      --soft: #f5f7fa;
+      --soft-2: #eef5f4;
+      --accent: #126c68;
+      --warn: #9f4f16;
+      --danger: #9f2f2f;
+      --good: #246b38;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      line-height: 1.68;
+      color: var(--ink);
+      background: #eef2f5;
+    }
+
+    main {
+      width: min(1160px, calc(100% - 32px));
+      margin: 32px auto;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      box-shadow: 0 14px 40px rgba(20, 31, 48, 0.08);
+    }
+
+    header,
+    section {
+      padding: 30px 40px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    header { background: linear-gradient(180deg, #fbfcfd, #fff); }
+    section:last-child { border-bottom: 0; }
+
+    h1, h2, h3 { line-height: 1.32; letter-spacing: 0; }
+    h1 { margin: 0 0 8px; font-size: 30px; color: #123c3a; }
+    h2 { margin: 0 0 14px; font-size: 22px; color: #123c3a; }
+    h3 { margin: 20px 0 8px; font-size: 17px; color: #123c3a; }
+    p { margin: 8px 0; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: #edf1f5;
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.95em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 4px;
+      font-size: 14px;
+    }
+
+    th, td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--soft-2);
+      color: #183b39;
+      font-weight: 700;
+    }
+
+    tr:nth-child(even) td { background: #fbfcfd; }
+    ul, ol { margin: 8px 0 0 20px; padding: 0; }
+    li { margin: 6px 0; }
+
+    .subtitle,
+    .muted { color: var(--muted); }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1.1;
+      color: var(--accent);
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-block;
+      margin: 0 6px 6px 0;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill.good { color: var(--good); background: #e9f5ef; border-color: #cde5d6; }
+    .pill.warn { color: var(--warn); background: #fff0df; border-color: #eed3b6; }
+    .pill.stop { color: var(--danger); background: #feecec; border-color: #f1c7c7; }
+
+    .note {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-top: 12px;
+    }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+      margin-top: 16px;
+    }
+
+    .flow-step {
+      position: relative;
+      min-height: 124px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 13px;
+    }
+
+    .flow-step:not(:last-child)::after {
+      content: ">";
+      position: absolute;
+      right: -13px;
+      top: 42px;
+      color: var(--accent);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .flow-step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: #123c3a;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    @media (max-width: 1000px) {
+      .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .flow-step:not(:last-child)::after { display: none; }
+    }
+
+    @media (max-width: 760px) {
+      main { width: 100%; margin: 0; border-left: 0; border-right: 0; }
+      header, section { padding: 24px 18px; }
+      .metric-grid, .two-col, .flow { grid-template-columns: 1fr; }
+      table { display: block; overflow-x: auto; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>财经助手项目交接文档</h1>
+      <p class="subtitle">更新时间：2026-05-20 12:15（Asia/Shanghai）。本文档用于交接当前项目状态、数据边界、模块架构、自动化逻辑、日报机制和后续开发卡点。</p>
+      <p class="note">当前生产主线已经收敛为 <strong>微信公众号 / WeWe RSS 单一数据源</strong>。用户负责在 WeWe RSS 中维护订阅；Codex 自动化只监听已有订阅、导入全文、生成摘要、更新看板，并在有新增文章时生成日报。</p>
+    </header>
+
+    <section>
+      <h2>一眼看懂</h2>
+      <div class="metric-grid">
+        <div class="metric"><strong>180</strong><span>SQLite 公众号文章记录</span></div>
+        <div class="metric"><strong>180</strong><span>已生成本地摘要</span></div>
+        <div class="metric"><strong>9</strong><span>WeWe RSS 当前订阅源</span></div>
+        <div class="metric"><strong>1</strong><span>已生成测试日报</span></div>
+      </div>
+      <p class="muted">数据库已清理为仅保留 <code>source_type=wechat</code> 且 <code>completeness=WeWe RSS 全文</code> 的记录。网页抓取、PDF、搜狗候选、公众号 API 占位项和手工 Morgan Stanley 示例均已移除。</p>
+    </section>
+
+    <section>
+      <h2>交接结论</h2>
+      <ul>
+        <li><span class="pill good">可用</span> WeWe RSS 订阅文章导入、去重、全文归档、本地摘要、主看板筛选排序、日报生成、历史日报索引。</li>
+        <li><span class="pill good">已同步</span> 两条 Codex 自动化任务：每天 08:45 和 17:15 运行 <code>python -m src.cli run-once</code>。</li>
+        <li><span class="pill warn">预留</span> 深度总结架构已留好，但当前日报与文章摘要仍使用本地抽取式摘要，尚未接入模型 API。</li>
+        <li><span class="pill stop">暂缓</span> 大摩 Robin Xing / Laura Wang / Morgan Stanley 外资行来源不在当前生产主线内，后续需要单独开发授权或公开来源模块。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>当前数据源</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>项目归类</th>
+            <th>WeWe RSS 订阅名</th>
+            <th>当前记录</th>
+            <th>领域</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>郭磊宏观茶座</td><td>郭磊宏观茶座</td><td>20</td><td>宏观</td><td>广发宏观方向。</td></tr>
+          <tr><td>广发证券研究</td><td>广发证券研究</td><td>20</td><td>策略</td><td>广发研究综合号，内容较杂。</td></tr>
+          <tr><td>晨明的策略深度思考</td><td>晨明的策略深度思考</td><td>20</td><td>策略</td><td>刘晨明策略方向。</td></tr>
+          <tr><td>华创宏观</td><td>一瑜中的</td><td>20</td><td>宏观</td><td>通过别名映射归入华创宏观。</td></tr>
+          <tr><td>华泰研究</td><td>华泰证券金融工程、华泰证券策略研究</td><td>40</td><td>金工</td><td>两个订阅源合并归入华泰研究。</td></tr>
+          <tr><td>兴证策略</td><td>尧望后势</td><td>20</td><td>策略</td><td>通过别名映射归入兴证策略。</td></tr>
+          <tr><td>华泰固收</td><td>华泰证券固收研究</td><td>20</td><td>固收</td><td>固收方向主线。</td></tr>
+          <tr><td>华西研究</td><td>郁言债市</td><td>20</td><td>固收</td><td>通过别名映射归入华西研究。</td></tr>
+        </tbody>
+      </table>
+      <p class="note">WeWe RSS 本地服务入口：<code>http://localhost:4000/dash</code>；订阅列表接口：<code>http://localhost:4000/feeds</code>。新增公众号由用户在 dashboard 中手动完成，自动化不负责新增公众号。</p>
+    </section>
+
+    <section>
+      <h2>运行流程</h2>
+      <div class="flow" aria-label="当前生产流程">
+        <div class="flow-step">
+          <strong>1. 订阅维护</strong>
+          <p>用户在 WeWe RSS dashboard 手动增删公众号。</p>
+        </div>
+        <div class="flow-step">
+          <strong>2. 自动触发</strong>
+          <p>Codex 自动化早盘/收盘执行 <code>run-once</code>。</p>
+        </div>
+        <div class="flow-step">
+          <strong>3. 全文导入</strong>
+          <p>读取 <code>/feeds</code> 和单号 <code>mode=fulltext</code> JSON。</p>
+        </div>
+        <div class="flow-step">
+          <strong>4. 入库去重</strong>
+          <p>SQLite 按 URL 去重，识别本轮新增文章。</p>
+        </div>
+        <div class="flow-step">
+          <strong>5. 摘要看板</strong>
+          <p>生成本地摘要，刷新 <code>output/index.html</code>。</p>
+        </div>
+        <div class="flow-step">
+          <strong>6. 日报归档</strong>
+          <p>有新增文章时生成日报 HTML/JSON 和索引。</p>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>功能状态</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>功能</th>
+            <th>状态</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>公众号全文导入</td><td><span class="pill good">已完成</span></td><td>通过 WeWe RSS fulltext feed 导入正文和原始 HTML。</td></tr>
+          <tr><td>数据清理</td><td><span class="pill good">已完成</span></td><td>当前只保留公众号全文记录，不再保留网页/PDF/旧候选。</td></tr>
+          <tr><td>自动化监听</td><td><span class="pill good">已完成</span></td><td>早盘 08:45、收盘 17:15，每天运行一次主流程。</td></tr>
+          <tr><td>主看板</td><td><span class="pill good">已完成</span></td><td>支持来源、分类、状态、搜索、日期区间筛选和发布时间升/降序排序。</td></tr>
+          <tr><td>每日日报</td><td><span class="pill good">已完成架构</span></td><td>有新增文章时生成本轮日报；测试日报已生成。</td></tr>
+          <tr><td>深度总结</td><td><span class="pill warn">预留</span></td><td>当前使用本地抽取式摘要，后续可接入模型 API。</td></tr>
+          <tr><td>外资行研报</td><td><span class="pill stop">暂缓</span></td><td>大摩 Robin / Laura Wang 等来源需要单独设计。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>主要产物</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>产物</th>
+            <th>路径</th>
+            <th>用途</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>主看板</td><td><a href="output/index.html"><code>output/index.html</code></a></td><td>浏览所有公众号文章，支持筛选、搜索、排序。</td></tr>
+          <tr><td>看板数据</td><td><code>output/items.json</code></td><td>主看板使用的数据导出。</td></tr>
+          <tr><td>日报索引</td><td><a href="output/reports/index.html"><code>output/reports/index.html</code></a></td><td>查阅历史日报。</td></tr>
+          <tr><td>测试日报</td><td><a href="output/reports/daily/2026-05-20/20260520-120927.html"><code>output/reports/daily/2026-05-20/20260520-120927.html</code></a></td><td>用 2026-05-20 已入库内容生成的测试日报。</td></tr>
+          <tr><td>测试日报 JSON</td><td><code>output/reports/daily/2026-05-20/20260520-120927.json</code></td><td>日报结构化数据，便于后续二次处理。</td></tr>
+          <tr><td>SQLite 数据库</td><td><code>data/research.sqlite</code></td><td>文章、正文、摘要、状态、时间字段。</td></tr>
+          <tr><td>原始 HTML 归档</td><td><code>data/raw/</code></td><td>每篇公众号文章原始 HTML。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>模块架构</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>模块</th>
+            <th>职责</th>
+            <th>交接注意</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>src/cli.py</code></td><td>命令行入口，串联采集、摘要、日报、看板、状态。</td><td><code>run-once</code> 是自动化主命令。</td></tr>
+          <tr><td><code>src/config.py</code></td><td>路径常量、目录初始化、配置读取。</td><td>新增了 <code>REPORTS_DIR</code>。</td></tr>
+          <tr><td><code>config/sources.yaml</code></td><td>公众号目标、别名映射、WeWe RSS 配置。</td><td><code>web_sources</code> 和 <code>manual_links</code> 当前为空。</td></tr>
+          <tr><td><code>src/collectors/wewe_rss.py</code></td><td>读取 WeWe RSS 订阅和 fulltext feed。</td><td>按别名映射只采当前目标公众号。</td></tr>
+          <tr><td><code>src/collectors/wechat.py</code></td><td>公众号采集总入口。</td><td>默认不再生成 API 占位记录。</td></tr>
+          <tr><td><code>src/db.py</code></td><td>SQLite schema、upsert、查询、摘要更新。</td><td>新增 <code>list_urls</code>、<code>list_items_by_ids</code> 等供日报识别新增文章。</td></tr>
+          <tr><td><code>src/summarizer/local.py</code></td><td>本地抽取式摘要。</td><td>后续深度总结可以替换或并行新增。</td></tr>
+          <tr><td><code>src/dashboard/render.py</code></td><td>生成主看板 HTML 和 <code>items.json</code>。</td><td>前端 JS 实现时间段筛选和排序。</td></tr>
+          <tr><td><code>src/reports/daily.py</code></td><td>生成日报 HTML/JSON 和日报索引。</td><td>当前使用已有摘要；深度总结状态字段已预留。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>命令手册</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>命令</th>
+            <th>作用</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>python -m src.cli status</code></td><td>查看数据库记录数、状态分布、公众号覆盖和 WeWe RSS 订阅列表。</td></tr>
+          <tr><td><code>python -m src.cli collect --source wechat</code></td><td>只从 WeWe RSS/公众号通道采集文章。</td></tr>
+          <tr><td><code>python -m src.cli summarize</code></td><td>为待摘要文章生成本地摘要。</td></tr>
+          <tr><td><code>python -m src.cli render-dashboard</code></td><td>刷新主看板和 <code>output/items.json</code>。</td></tr>
+          <tr><td><code>python -m src.cli daily-report</code></td><td>用今天已入库内容手动生成一份日报，适合测试。</td></tr>
+          <tr><td><code>python -m src.cli run-once</code></td><td>自动化主流程：初始化、采集、摘要、有新增则日报、刷新看板、输出状态。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>自动化任务</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>任务</th>
+            <th>时间</th>
+            <th>行为边界</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>财经助手早盘公众号研报监听</td><td>每天 08:45</td><td>运行 <code>python -m src.cli run-once</code>。只同步已有 WeWe RSS 订阅；有新增文章则生成日报。</td></tr>
+          <tr><td>财经助手收盘公众号研报监听</td><td>每天 17:15</td><td>同上。禁止新增公众号、禁止网页/PDF/搜狗/其他互联网来源抓取。</td></tr>
+        </tbody>
+      </table>
+      <p class="note">自动化 prompt 已同步要求汇报：数据库记录数、WeWe RSS 订阅列表、成功摘要数量、新增文章数量、日报路径和人工处理缺口。</p>
+    </section>
+
+    <section>
+      <h2>验证记录</h2>
+      <ul>
+        <li><code>python -m src.cli status</code>：数据库 180 条，状态 <code>summarized=180</code>。</li>
+        <li><code>python -m src.cli run-once</code>：采集 180 条，新增 0 条，摘要更新 0 条；无新增时不会重复生成日报。</li>
+        <li>主看板时间筛选验证：日期区间 <code>2026-05-18</code> 到 <code>2026-05-20</code> 筛出 26 条，升序/降序排序正确。</li>
+        <li>日报索引验证：<code>output/reports/index.html</code> 可打开，并能跳转到测试日报。</li>
+        <li>测试日报验证：包含 180 篇文章、4 个领域、8 个公众号来源、20 条特殊注意线索。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>已知问题与后续路线</h2>
+      <ol>
+        <li><strong>深度总结尚未接模型 API。</strong> 当前摘要是本地抽取式，日报只是基于已有摘要做归纳。下一步应接入模型，按“核心观点、关键证据、市场含义、风险提示、完整性说明”生成高质量总结。</li>
+        <li><strong>综合号分类偏粗。</strong> 广发、华泰等综合号下包含宏观、策略、金工、固收、行业等内容，目前主要按订阅源归类，后续可用标题/正文关键词二级分类。</li>
+        <li><strong>新增公众号仍需人工。</strong> WeWe 远端转换接口可能被 Cloudflare 拦截，稳定做法仍是用户在 dashboard 手动添加订阅。</li>
+        <li><strong>WeWe RSS 依赖账号状态。</strong> 如果 WeRead 账号被标记失效，需要在 dashboard 账号管理里启用，或使用 skill 中的 <code>enable-accounts --latest</code> 辅助恢复本地状态。</li>
+        <li><strong>大摩 Robin Xing / Laura Wang 暂缺。</strong> Morgan Stanley 公开网页、PDF、邮件或授权平台未纳入当前自动化，后续需要单独开发外资行来源模块。</li>
+        <li><strong>历史日报策略待定。</strong> 当前策略是每次有新增文章就生成一份本轮日报；如果未来需要“每日唯一日报”，可改为同日追加/覆盖聚合版日报。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>下一位接手者建议</h2>
+      <ol>
+        <li>先运行 <code>python -m src.cli status</code>，确认 WeWe RSS 服务和数据库状态。</li>
+        <li>打开 <a href="output/index.html"><code>output/index.html</code></a> 检查主看板筛选、排序和日报入口。</li>
+        <li>打开 <a href="output/reports/index.html"><code>output/reports/index.html</code></a> 检查日报索引。</li>
+        <li>如果要验证日报，不要先删库；可以运行 <code>python -m src.cli daily-report</code> 手动生成当天测试日报。</li>
+        <li>如果要开发深度总结，优先在 <code>src/reports/daily.py</code> 和 <code>src/summarizer/</code> 下新增模型总结模块，避免破坏现有本地摘要。</li>
+      </ol>
+    </section>
+  </main>
+</body>
+</html>

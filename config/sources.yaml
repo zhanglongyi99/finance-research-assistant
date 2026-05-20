@@ -1,0 +1,87 @@
+wechat_accounts:
+  - name: 郭磊宏观茶座
+    category: 宏观
+    priority: P0
+    analysts: 郭磊
+    keywords: 广发宏观,宏观,周报,快评,研报
+  - name: 广发证券研究
+    category: 策略
+    priority: P0
+    analysts: 郭磊,刘晨明
+    keywords: 广发,宏观,策略,景气,研报,周报
+  - name: 晨明的策略深度思考
+    category: 策略
+    priority: P0
+    analysts: 刘晨明
+    keywords: 策略,景气,行业比较,周报,研报
+  - name: 华创宏观
+    category: 宏观
+    priority: P0
+    analysts: 张瑜
+    aliases: 一瑜中的,华创证券研究所
+    keywords: 华创宏观,宏观,快评,周报,研报
+  - name: 华泰研究
+    category: 金工
+    priority: P0
+    analysts: 何康,张继强
+    aliases: 华泰睿思,华泰证券金融工程,华泰证券策略研究
+    keywords: 华泰,金工,固收,行业轮动,资产配置,研报
+  - name: 兴证策略
+    category: 策略
+    priority: P0
+    analysts: 张启尧
+    aliases: 尧望后势
+    keywords: 兴证策略,策略,周报,研报
+  - name: 华泰固收
+    category: 固收
+    priority: P0
+    analysts: 张继强
+    aliases: 华泰固收强债论坛,华泰证券固收研究
+    keywords: 华泰固收,利率债,信用债,转债,债市,研报
+  - name: 华西研究
+    category: 固收
+    priority: P1
+    analysts: 刘郁
+    aliases: 郁言债市
+    keywords: 华西,刘郁,固收,信用债,研报
+
+wechat_article_links:
+  # 把已知的 mp.weixin.qq.com 文章链接放到这里后运行：
+  # python -m src.cli collect --source wechat
+  # - title: 示例：公众号文章标题
+  #   url: https://mp.weixin.qq.com/s/xxxxx
+  #   source: 示例公众号
+  #   category: 宏观
+
+web_sources: []
+
+manual_links: []
+
+wechat_api:
+  enabled: false
+  provider: auto
+  local_parser_enabled: true
+  parse_endpoint: https://api.readgzh.site/rd
+  readable_endpoint_template: https://api.readgzh.site/rd?url={url}
+  list_endpoint_template: ""
+  method: POST
+  token_env: READGZH_API_KEY
+  auth_header: Authorization
+  auth_prefix: "Bearer "
+  timeout_seconds: 12
+  max_articles_per_account: 5
+
+wechat_discovery:
+  enabled: false
+  providers: wxmp,sogou
+  wxmp_cookies_file: config/wxmp_cookies.json
+  lookback_days: 14
+  max_results_per_account: 8
+  query_templates: "{name} 研报,{name} 周报,{analysts} {keywords}"
+  required_keywords: 研报,宏观,策略,金工,固收,周报,快评,点评,展望,利率,信用债,转债,行业轮动,资产配置
+
+wewe_rss:
+  enabled: true
+  base_url: http://localhost:4000
+  mode: fulltext
+  limit_per_feed: 20

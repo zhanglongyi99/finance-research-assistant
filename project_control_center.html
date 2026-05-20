@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>财经助手项目总控台</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #5f6b7a;
+      --line: #d9e1ea;
+      --paper: #ffffff;
+      --soft: #f5f7fa;
+      --soft-2: #eef5f4;
+      --accent: #126c68;
+      --accent-dark: #123c3a;
+      --warn: #9f4f16;
+      --danger: #9f2f2f;
+      --good: #246b38;
+      --code: #edf1f5;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      line-height: 1.68;
+      color: var(--ink);
+      background: #eef2f5;
+    }
+
+    main {
+      width: min(1180px, calc(100% - 32px));
+      margin: 32px auto;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      box-shadow: 0 14px 40px rgba(20, 31, 48, 0.08);
+    }
+
+    header,
+    section {
+      padding: 30px 40px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    header {
+      background: linear-gradient(180deg, #fbfcfd, #ffffff);
+    }
+
+    section:last-child { border-bottom: 0; }
+
+    h1,
+    h2,
+    h3 {
+      line-height: 1.32;
+      letter-spacing: 0;
+      color: var(--accent-dark);
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      font-size: 22px;
+    }
+
+    h3 {
+      margin: 18px 0 8px;
+      font-size: 17px;
+    }
+
+    p { margin: 8px 0; }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    a:hover { text-decoration: underline; }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: var(--code);
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.95em;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 4px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--soft-2);
+      color: #183b39;
+      font-weight: 700;
+    }
+
+    tr:nth-child(even) td { background: #fbfcfd; }
+
+    ul,
+    ol {
+      margin: 8px 0 0 20px;
+      padding: 0;
+    }
+
+    li { margin: 6px 0; }
+
+    .subtitle,
+    .muted {
+      color: var(--muted);
+    }
+
+    .note {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 8px;
+      padding: 14px 16px;
+      margin-top: 12px;
+    }
+
+    .metric-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .metric {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      border-radius: 8px;
+      padding: 14px;
+    }
+
+    .metric strong {
+      display: block;
+      font-size: 26px;
+      line-height: 1.1;
+      color: var(--accent);
+    }
+
+    .metric span {
+      display: block;
+      margin-top: 4px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-block;
+      margin: 0 6px 6px 0;
+      padding: 3px 8px;
+      border-radius: 999px;
+      border: 1px solid var(--line);
+      background: #fff;
+      color: var(--muted);
+      font-size: 13px;
+      white-space: nowrap;
+    }
+
+    .pill.good {
+      color: var(--good);
+      background: #e9f5ef;
+      border-color: #cde5d6;
+    }
+
+    .pill.warn {
+      color: var(--warn);
+      background: #fff0df;
+      border-color: #eed3b6;
+    }
+
+    .pill.stop {
+      color: var(--danger);
+      background: #feecec;
+      border-color: #f1c7c7;
+    }
+
+    .pill.plan {
+      color: var(--accent);
+      background: #e6f2f0;
+      border-color: #c6dedb;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 14px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+      padding: 14px;
+    }
+
+    .card h3 { margin-top: 0; }
+
+    .flow {
+      display: grid;
+      grid-template-columns: repeat(6, minmax(0, 1fr));
+      gap: 10px;
+      align-items: stretch;
+      margin-top: 16px;
+    }
+
+    .flow-step {
+      position: relative;
+      min-height: 126px;
+      border: 1px solid var(--line);
+      background: #fff;
+      border-radius: 8px;
+      padding: 13px;
+    }
+
+    .flow-step:not(:last-child)::after {
+      content: ">";
+      position: absolute;
+      right: -13px;
+      top: 42px;
+      color: var(--accent);
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .flow-step strong {
+      display: block;
+      margin-bottom: 6px;
+      color: var(--accent-dark);
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: 150px 1fr;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .timeline div {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .timeline div:nth-child(odd) {
+      background: var(--soft-2);
+      font-weight: 700;
+      color: #183b39;
+    }
+
+    .timeline div:nth-last-child(-n+2) {
+      border-bottom: 0;
+    }
+
+    .link-grid {
+      display: grid;
+      grid-template-columns: repeat(5, minmax(0, 1fr));
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .link-grid a {
+      display: block;
+      min-height: 76px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--soft);
+      padding: 12px;
+    }
+
+    .link-grid strong {
+      display: block;
+      color: var(--accent-dark);
+      margin-bottom: 4px;
+    }
+
+    @media (max-width: 1040px) {
+      .metric-grid,
+      .cards,
+      .link-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .flow-step:not(:last-child)::after { display: none; }
+    }
+
+    @media (max-width: 760px) {
+      main {
+        width: 100%;
+        margin: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+
+      header,
+      section {
+        padding: 24px 18px;
+      }
+
+      h1 { font-size: 26px; }
+
+      .metric-grid,
+      .two-col,
+      .cards,
+      .flow,
+      .link-grid,
+      .timeline {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline div:nth-child(odd) { border-bottom: 0; }
+      table { display: block; overflow-x: auto; }
+    }
+
+    @media print {
+      body { background: #fff; }
+      main {
+        width: 100%;
+        margin: 0;
+        border: 0;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>财经助手项目总控台</h1>
+      <p class="subtitle">更新时间：2026-05-20 16:19（Asia/Shanghai）。本文件是后续跨窗口交接、进度同步、需求整理和产品方向沉淀的第一入口。</p>
+      <p class="note"><strong>当前定位：</strong>一个以研报知识库为基础、以每日 AI 简报和引用式问答为核心的个人财经研究助手。当前开发主线仍以微信公众号研报为核心，行情、新闻、提醒和实时数据先作为未来模块预留。</p>
+    </header>
+
+    <section>
+      <h2>项目总览</h2>
+      <div class="metric-grid">
+        <div class="metric"><strong>180</strong><span>SQLite 公众号文章记录</span></div>
+        <div class="metric"><strong>180</strong><span>已生成本地摘要</span></div>
+        <div class="metric"><strong>9</strong><span>WeWe RSS 当前订阅源</span></div>
+        <div class="metric"><strong>1</strong><span>已生成测试日报</span></div>
+      </div>
+      <p class="muted">本页不包含 API key、账号状态、数据库内容或公众号原文正文。需要查看历史技术交接时，打开 <a href="project_progress_report.html">project_progress_report.html</a>。</p>
+    </section>
+
+    <section>
+      <h2>当前状态</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>事项</th>
+            <th>状态</th>
+            <th>说明</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>数据主线</td><td><span class="pill good">可用</span></td><td>当前收敛为微信公众号 / WeWe RSS 单一生产数据源。</td></tr>
+          <tr><td>入库与去重</td><td><span class="pill good">可用</span></td><td>SQLite 按 URL 去重，当前 180 条记录均为 <code>source_type=wechat</code>。</td></tr>
+          <tr><td>摘要</td><td><span class="pill warn">待升级</span></td><td>180 条均已有本地抽取式摘要；尚未接入模型深度总结。</td></tr>
+          <tr><td>看板</td><td><span class="pill good">可用</span></td><td>静态主看板支持来源、分类、状态、搜索、日期区间和排序。</td></tr>
+          <tr><td>日报</td><td><span class="pill good">架构完成</span></td><td>有新增文章时生成本轮日报；已有 2026-05-20 测试日报。</td></tr>
+          <tr><td>自动化</td><td><span class="pill good">已启用</span></td><td>每天 08:45 和 17:15 运行 <code>python -m src.cli run-once</code>。</td></tr>
+          <tr><td>Git/GitHub 开源</td><td><span class="pill warn">本地 Git 已初始化</span></td><td>已补充开源忽略规则、README 和环境变量示例；仍待创建 GitHub 远程仓库并推送。</td></tr>
+          <tr><td>云端化</td><td><span class="pill warn">待设计</span></td><td>当前仍是本地脚本、SQLite、静态 HTML 和本地 WeWe RSS 的组合。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>产品定位</h2>
+      <div class="two-col">
+        <div class="card">
+          <h3>第一版内核</h3>
+          <ul>
+            <li>以研报阅读助手为主，不直接开发泛财经全能助手。</li>
+            <li>首屏围绕今日/本轮新增研报的 AI 简报。</li>
+            <li>核心交互是基于研报库的引用式问答。</li>
+            <li>默认只基于已入库研报回答，证据不足时明确说明。</li>
+          </ul>
+        </div>
+        <div class="card">
+          <h3>长期方向</h3>
+          <ul>
+            <li>逐步演进为个人财经研究中枢。</li>
+            <li>未来接入实时金融数据、财经新闻、盘中提醒和专题研究。</li>
+            <li>行情、新闻、提醒在第一版 UI 中只做灰度占位。</li>
+            <li>联网搜索仅在用户明确要求时启用。</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>第一版形态</h2>
+      <div class="cards">
+        <div class="card">
+          <h3>简报</h3>
+          <p>作为首屏，展示本轮/今日新增研报的总览、分领域摘要、重点关注事项和新增研报列表。</p>
+          <span class="pill good">首屏核心</span>
+        </div>
+        <div class="card">
+          <h3>问答</h3>
+          <p>围绕研报库提问，输出结构化回答，并在回答下方展示引用研报卡片。</p>
+          <span class="pill plan">待开发</span>
+        </div>
+        <div class="card">
+          <h3>资料库</h3>
+          <p>承接现有看板能力，支持来源、领域、日期、关键词筛选和原文链接访问。</p>
+          <span class="pill good">已有基础</span>
+        </div>
+        <div class="card">
+          <h3>行情</h3>
+          <p>未来接入实时或延迟行情数据；第一版仅在导航中保留灰度入口。</p>
+          <span class="pill warn">规划中</span>
+        </div>
+        <div class="card">
+          <h3>新闻</h3>
+          <p>未来接入财经新闻源；第一版不混入默认研报问答，避免可信边界模糊。</p>
+          <span class="pill warn">规划中</span>
+        </div>
+        <div class="card">
+          <h3>提醒</h3>
+          <p>未来用于盘前推送、盘后复盘和盘中异动提醒；当前不进入开发范围。</p>
+          <span class="pill warn">规划中</span>
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2>系统架构</h2>
+      <div class="flow" aria-label="当前和目标架构">
+        <div class="flow-step">
+          <strong>1. 来源维护</strong>
+          <p>用户在 WeWe RSS dashboard 手动维护公众号订阅。</p>
+        </div>
+        <div class="flow-step">
+          <strong>2. 采集导入</strong>
+          <p><code>src/collectors/wewe_rss.py</code> 读取 fulltext feed。</p>
+        </div>
+        <div class="flow-step">
+          <strong>3. 入库去重</strong>
+          <p><code>src/db.py</code> 写入 SQLite，按 URL 去重。</p>
+        </div>
+        <div class="flow-step">
+          <strong>4. 摘要日报</strong>
+          <p>本地摘要和日报生成当前已跑通，后续接模型 API。</p>
+        </div>
+        <div class="flow-step">
+          <strong>5. 平台界面</strong>
+          <p>当前是静态看板；目标升级为简报、问答、资料库。</p>
+        </div>
+        <div class="flow-step">
+          <strong>6. 问答层</strong>
+          <p>未来新增研报检索、引用回答、对话历史和联网搜索工具。</p>
+        </div>
+      </div>
+      <table>
+        <thead>
+          <tr>
+            <th>模块</th>
+            <th>当前职责</th>
+            <th>下一阶段演进</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>src/cli.py</code></td><td>命令行入口，串联采集、摘要、日报、看板和状态。</td><td>保留为本地/云端调度入口。</td></tr>
+          <tr><td><code>src/collectors/</code></td><td>采集 WeWe RSS、手工链接、网页等来源。</td><td>短期继续以 WeWe RSS 为主，其他来源后置。</td></tr>
+          <tr><td><code>src/summarizer/</code></td><td>本地抽取式摘要。</td><td>新增 OpenAI-compatible 模型总结适配层。</td></tr>
+          <tr><td><code>src/reports/</code></td><td>生成日报 HTML/JSON 和日报索引。</td><td>升级为定时预生成 AI 简报。</td></tr>
+          <tr><td><code>src/dashboard/</code></td><td>生成静态看板和 <code>items.json</code>。</td><td>改造为平台资料库，后续迁移到 Web 应用前端。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>已完成</h2>
+      <ul>
+        <li>建立 Python 项目目录、配置文件、SQLite 数据库和基础 CLI。</li>
+        <li>跑通 WeWe RSS 公众号全文导入、原始 HTML 归档和 URL 去重。</li>
+        <li>清理生产数据边界，只保留微信公众号全文记录。</li>
+        <li>生成 180 篇文章的本地抽取式摘要。</li>
+        <li>生成主看板 <code>output/index.html</code> 和看板数据 <code>output/items.json</code>。</li>
+        <li>生成日报索引和 2026-05-20 测试日报。</li>
+        <li>配置早盘和收盘两条 Codex 自动化任务。</li>
+        <li>明确第一版产品形态：简报 / 问答 / 资料库。</li>
+        <li>新增本项目总控文档，作为后续交接和需求同步入口。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>需求池</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>需求</th>
+            <th>优先级建议</th>
+            <th>状态</th>
+            <th>备注</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Git 版本控制与 GitHub 开源</td><td>P0</td><td><span class="pill warn">本地准备中</span></td><td>已初始化本地 Git、补充 <code>.gitignore</code>、<code>.gitattributes</code>、README 和 <code>.env.example</code>；待创建 GitHub 远程仓库。</td></tr>
+          <tr><td>产品总控文档长期维护</td><td>P0</td><td><span class="pill good">已创建</span></td><td>后续新增需求、决策、问题和进度都同步到本页。</td></tr>
+          <tr><td>OpenAI-compatible 模型 API 接入</td><td>P0</td><td><span class="pill warn">待开发</span></td><td>用户有第三方 GPT 中转站，后续用环境变量配置。</td></tr>
+          <tr><td>AI 深度总结与今日简报台</td><td>P0</td><td><span class="pill warn">待开发</span></td><td>基于新增研报定时预生成。</td></tr>
+          <tr><td>研报引用式问答</td><td>P1</td><td><span class="pill warn">待设计</span></td><td>默认查已入库研报，回答带文章级引用。</td></tr>
+          <tr><td>云端访问版本</td><td>P1</td><td><span class="pill warn">待设计</span></td><td>供少量用户访问，不按高并发设计。</td></tr>
+          <tr><td>资料库 UI 升级</td><td>P1</td><td><span class="pill warn">待设计</span></td><td>沿用现有筛选列表能力，融入新平台外壳。</td></tr>
+          <tr><td>财经新闻源</td><td>P2</td><td><span class="pill plan">规划中</span></td><td>未来作为独立工具或来源，不默认混入研报问答。</td></tr>
+          <tr><td>实时金融数据</td><td>P2</td><td><span class="pill plan">规划中</span></td><td>需要选择数据 API 和权限策略。</td></tr>
+          <tr><td>盘中异动提醒</td><td>P3</td><td><span class="pill plan">规划中</span></td><td>依赖行情数据、规则引擎和通知系统。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>问题与风险</h2>
+      <ol>
+        <li><strong>开源隐私边界：</strong>数据库、原始 HTML、输出内容、日志、API key、账号状态和本地路径需要从 Git 仓库中排除或模板化。</li>
+        <li><strong>WeWe RSS 依赖：</strong>当前采集链路依赖本地 WeWe RSS 服务和账号状态，云端化时需要重新设计部署方式。</li>
+        <li><strong>摘要质量：</strong>当前是本地抽取式摘要，容易混入作者信息、免责声明和排版噪声，需要模型总结和正文清洗升级。</li>
+        <li><strong>引用可信度：</strong>问答必须保持证据边界，库内材料不足时不能编造；第一版先做到文章级引用。</li>
+        <li><strong>云端部署：</strong>当前 SQLite、静态 HTML、Codex 自动化都偏本地，云端化需要拆分后端、前端、数据库和调度。</li>
+        <li><strong>外资行和网页来源：</strong>Morgan Stanley 等来源尚未纳入当前生产主线，后续要单独确认授权和公开来源策略。</li>
+        <li><strong>测试覆盖：</strong>当前没有正式测试目录，后续功能开发需要补充最小自动化验证。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>决策记录</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>日期</th>
+            <th>决策</th>
+            <th>影响</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>2026-05-20</td><td>第一版产品内核确定为“研报阅读助手”，不是直接开发全能财经助手。</td><td>降低范围风险，先把研报库、简报和问答做扎实。</td></tr>
+          <tr><td>2026-05-20</td><td>第一版首屏选择“今日简报台”。</td><td>产品体验从文章列表转向 AI briefing。</td></tr>
+          <tr><td>2026-05-20</td><td>问答默认只查已入库研报库，明确要求时才联网搜索。</td><td>保持可信边界，并为未来工具调用预留入口。</td></tr>
+          <tr><td>2026-05-20</td><td>问答回答采用“答案 + 引用研报卡片”，第一版引用粒度为文章级。</td><td>降低实现复杂度，同时保证基本可追溯。</td></tr>
+          <tr><td>2026-05-20</td><td>简报采用定时预生成，主要基于本轮/今日新增研报。</td><td>沿用现有自动化，减少打开页面时的等待和失败风险。</td></tr>
+          <tr><td>2026-05-20</td><td>创建 <code>project_control_center.html</code> 作为长期总控文档。</td><td>后续跨窗口接手优先阅读本文件。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>下一步计划</h2>
+      <ol>
+        <li><strong>P0：GitHub 远程仓库发布。</strong> 创建 GitHub 仓库，连接远程地址，推送本地首个版本，并确认 GitHub 页面未包含运行数据或密钥。</li>
+        <li><strong>P0：模型 API 接入方案。</strong> 设计 OpenAI-compatible 配置项和调用层，用用户的第三方 GPT 中转站做一次最小连通验证。</li>
+        <li><strong>P0：深度总结最小闭环。</strong> 在不破坏现有本地摘要的前提下，新增模型总结模块，并让日报/简报优先使用模型总结。</li>
+        <li><strong>P1：研报问答原型。</strong> 建立基础检索、文章级引用回答和近期对话历史保存。</li>
+        <li><strong>P1：平台 UI 改造。</strong> 将现有看板升级为简报 / 问答 / 资料库的静态或 Web 应用结构。</li>
+        <li><strong>P1：云端化设计。</strong> 确认部署方式、数据库方案、WeWe RSS 位置、只读访问权限和少量用户访问路径。</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>更新规则</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>发生什么</th>
+            <th>更新哪里</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>新增需求</td><td>写入“需求池”，标注优先级建议、状态和备注。</td></tr>
+          <tr><td>确认产品或技术方向</td><td>写入“决策记录”，说明日期、决策和影响。</td></tr>
+          <tr><td>完成开发或验证</td><td>更新“当前状态”和“已完成”。</td></tr>
+          <tr><td>发现问题或风险</td><td>写入“问题与风险”，避免跨窗口遗失。</td></tr>
+          <tr><td>确定下一步</td><td>更新“下一步计划”，保持接手者可直接推进。</td></tr>
+          <tr><td>发生较大变更</td><td>追加“更新日志”，简述变更和下一步。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>更新日志</h2>
+      <div class="timeline">
+        <div>2026-05-20 16:19</div>
+        <div>完成 Git 本地初始化准备：新增开源忽略规则、换行规则、环境变量示例，更新 README，并确认运行数据、大型输出和本地密钥不会进入仓库。</div>
+        <div>2026-05-20 16:10</div>
+        <div>新增项目总控台文档，整理产品定位、第一版形态、架构地图、需求池、风险、决策记录和下一步计划。</div>
+        <div>2026-05-20 12:15</div>
+        <div>历史交接文档记录当前生产主线：WeWe RSS 采集、180 条公众号文章、本地摘要、看板、日报和自动化任务。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>相关入口</h2>
+      <div class="link-grid">
+        <a href="project_progress_report.html">
+          <strong>历史交接文档</strong>
+          <span>查看当前项目进度、模块架构和交接注意事项。</span>
+        </a>
+        <a href="output/index.html">
+          <strong>主看板</strong>
+          <span>浏览已入库公众号研报和本地摘要。</span>
+        </a>
+        <a href="output/reports/index.html">
+          <strong>日报索引</strong>
+          <span>查看已生成的历史日报。</span>
+        </a>
+        <a href="config/sources.yaml">
+          <strong>来源配置</strong>
+          <span>查看公众号、别名、分类和 WeWe RSS 配置。</span>
+        </a>
+        <a href="README.md">
+          <strong>README</strong>
+          <span>查看当前命令入口和项目说明。</span>
+        </a>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

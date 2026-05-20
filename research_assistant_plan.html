@@ -1,0 +1,666 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI研报助手开发执行计划</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #172033;
+      --muted: #5d6978;
+      --line: #d8e0e8;
+      --paper: #ffffff;
+      --soft: #f5f7fa;
+      --soft-2: #eef5f4;
+      --accent: #126c68;
+      --accent-dark: #123c3a;
+      --warn: #9f4f16;
+      --danger: #9f2f2f;
+      --good: #246b38;
+      --code: #edf1f5;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
+      line-height: 1.7;
+      color: var(--ink);
+      background: #eef2f5;
+    }
+
+    main {
+      width: min(1160px, calc(100% - 32px));
+      margin: 32px auto;
+      background: var(--paper);
+      border: 1px solid var(--line);
+      box-shadow: 0 14px 40px rgba(20, 31, 48, 0.08);
+    }
+
+    header {
+      padding: 36px 40px 26px;
+      border-bottom: 1px solid var(--line);
+      background: linear-gradient(180deg, #fbfcfd, #ffffff);
+    }
+
+    section {
+      padding: 28px 40px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    section:last-child {
+      border-bottom: 0;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      color: var(--accent-dark);
+      font-size: 30px;
+      line-height: 1.25;
+      letter-spacing: 0;
+    }
+
+    h2 {
+      margin: 0 0 14px;
+      color: var(--accent-dark);
+      font-size: 22px;
+      line-height: 1.35;
+      letter-spacing: 0;
+    }
+
+    h3 {
+      margin: 22px 0 10px;
+      font-size: 17px;
+      line-height: 1.35;
+    }
+
+    p {
+      margin: 8px 0;
+    }
+
+    ul,
+    ol {
+      margin: 8px 0 0 20px;
+      padding: 0;
+    }
+
+    li {
+      margin: 6px 0;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 14px 0 6px;
+      font-size: 14px;
+    }
+
+    th,
+    td {
+      border: 1px solid var(--line);
+      padding: 10px 12px;
+      vertical-align: top;
+      text-align: left;
+    }
+
+    th {
+      background: var(--soft-2);
+      color: #183b39;
+      font-weight: 700;
+    }
+
+    tr:nth-child(even) td {
+      background: #fbfcfd;
+    }
+
+    code {
+      padding: 2px 5px;
+      border-radius: 5px;
+      background: var(--code);
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 0.95em;
+    }
+
+    pre {
+      margin: 12px 0;
+      padding: 14px 16px;
+      overflow: auto;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: var(--code);
+      font-family: Consolas, "SFMono-Regular", Menlo, monospace;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+
+    pre code {
+      padding: 0;
+      background: transparent;
+      border-radius: 0;
+    }
+
+    .subtitle {
+      margin: 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .note,
+    .card {
+      border: 1px solid var(--line);
+      background: var(--soft);
+      padding: 16px;
+      border-radius: 8px;
+    }
+
+    .note strong {
+      color: var(--accent-dark);
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+      margin-top: 14px;
+    }
+
+    .tag {
+      display: inline-block;
+      margin: 0 6px 6px 0;
+      padding: 3px 8px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: #fff;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .pill {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 700;
+      background: #e9f5ef;
+      color: var(--good);
+      white-space: nowrap;
+    }
+
+    .pill.warn {
+      background: #fff0df;
+      color: var(--warn);
+    }
+
+    .pill.stop {
+      background: #feecec;
+      color: var(--danger);
+    }
+
+    .checklist {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px 18px;
+      margin-top: 12px;
+    }
+
+    .checkitem {
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      min-height: 44px;
+      padding: 10px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fff;
+    }
+
+    .checkitem input {
+      margin-top: 5px;
+      accent-color: var(--accent);
+    }
+
+    .checkitem span {
+      display: block;
+    }
+
+    .muted {
+      color: var(--muted);
+    }
+
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    button {
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #fff;
+      color: var(--ink);
+      padding: 8px 12px;
+      cursor: pointer;
+      font: inherit;
+      font-size: 14px;
+    }
+
+    button:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .timeline {
+      display: grid;
+      grid-template-columns: 130px 1fr;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      overflow: hidden;
+      margin-top: 12px;
+    }
+
+    .timeline div {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .timeline div:nth-child(odd) {
+      background: var(--soft-2);
+      font-weight: 700;
+      color: #183b39;
+    }
+
+    .timeline div:nth-last-child(-n+2) {
+      border-bottom: 0;
+    }
+
+    @media (max-width: 760px) {
+      main {
+        width: 100%;
+        margin: 0;
+        border-left: 0;
+        border-right: 0;
+      }
+
+      header,
+      section {
+        padding: 24px 18px;
+      }
+
+      h1 {
+        font-size: 25px;
+      }
+
+      .grid,
+      .checklist {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline {
+        grid-template-columns: 1fr;
+      }
+
+      .timeline div:nth-child(odd) {
+        border-bottom: 0;
+      }
+    }
+
+    @media print {
+      body {
+        background: #fff;
+      }
+
+      main {
+        width: 100%;
+        margin: 0;
+        border: 0;
+        box-shadow: none;
+      }
+
+      button,
+      .toolbar {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>AI研报助手开发执行计划</h1>
+      <p class="subtitle">目标：先把免费/已授权可见内容的采集、归档、AI总结和本地网页看板跑通；微信小程序 GUI 自动化放到后续阶段。更新时间：2026-05-19。</p>
+    </header>
+
+    <section>
+      <h2>1. 项目目标</h2>
+      <p>开发一个本地运行的 AI 研报助手，自动收集微信公众号、券商网页、公开 PDF、财经媒体转载等内容，保存原文入口和本地 PDF，生成 AI 总结，并汇总到一个本地网页端。</p>
+      <p class="note"><strong>核心策略：</strong>第一版先做稳定的数据闭环，不把券商微信小程序作为主线。小程序后续采用微信 PC GUI 自动化，尽量减少人工操作，但等主要采集链路稳定后再接入。</p>
+    </section>
+
+    <section>
+      <h2>2. 内容优先级</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>优先级</th>
+            <th>内容来源</th>
+            <th>处理方式</th>
+            <th>第一版状态</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><span class="pill">P0</span></td>
+            <td>微信公众号</td>
+            <td>第三方公众号解析 API + 链接解析；失败时记录待补正文。</td>
+            <td>立即实现</td>
+          </tr>
+          <tr>
+            <td><span class="pill">P0</span></td>
+            <td>券商网页/研究所网页</td>
+            <td>网页抓取、搜索模板、公开 PDF 下载。</td>
+            <td>立即实现</td>
+          </tr>
+          <tr>
+            <td><span class="pill warn">P1</span></td>
+            <td>东方财富、慧博公开页、财经媒体转载</td>
+            <td>抓标题、摘要、日期、链接；发现公开 PDF 则下载。</td>
+            <td>第一版补充源</td>
+          </tr>
+          <tr>
+            <td><span class="pill warn">P2</span></td>
+            <td>券商微信小程序</td>
+            <td>后续用微信 PC GUI 自动化；先在数据模型中预留字段。</td>
+            <td>暂缓开发</td>
+          </tr>
+          <tr>
+            <td><span class="pill stop">不做</span></td>
+            <td>付费墙、私有接口逆向、绕过验证码</td>
+            <td>不进入第一版范围。</td>
+            <td>排除</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>3. 第一版功能</h2>
+      <div class="checklist" id="featureChecklist">
+        <label class="checkitem"><input type="checkbox"><span>创建配置文件，列出目标公众号、券商、分析师、关键词和抓取频率。</span></label>
+        <label class="checkitem"><input type="checkbox"><span>定时抓取新增公众号文章、网页内容和公开 PDF。</span></label>
+        <label class="checkitem"><input type="checkbox"><span>本地保存结构化数据：标题、来源、作者/团队、日期、链接、PDF路径、分类、采集状态。</span></label>
+        <label class="checkitem"><input type="checkbox"><span>对网页正文和 PDF 生成 AI 总结。</span></label>
+        <label class="checkitem"><input type="checkbox"><span>生成本地网页看板，支持按日期、来源、团队、类别筛选。</span></label>
+        <label class="checkitem"><input type="checkbox"><span>记录缺口：API失败、仅有标题、疑似权限不足、小程序待处理。</span></label>
+      </div>
+      <div class="toolbar">
+        <button type="button" onclick="resetChecklist()">重置勾选</button>
+        <button type="button" onclick="window.print()">打印/导出 PDF</button>
+      </div>
+    </section>
+
+    <section>
+      <h2>4. 目标团队与关键词</h2>
+      <h3>公众号与机构</h3>
+      <p>
+        <span class="tag">郭磊宏观茶座</span>
+        <span class="tag">广发证券研究</span>
+        <span class="tag">晨明的策略深度思考</span>
+        <span class="tag">华创宏观</span>
+        <span class="tag">华泰研究</span>
+        <span class="tag">兴证策略</span>
+        <span class="tag">华泰固收</span>
+        <span class="tag">华西研究</span>
+      </p>
+      <h3>分析师与关键词</h3>
+      <p>
+        <span class="tag">郭磊</span>
+        <span class="tag">张瑜</span>
+        <span class="tag">刘晨明</span>
+        <span class="tag">何康</span>
+        <span class="tag">张启尧</span>
+        <span class="tag">张继强</span>
+        <span class="tag">刘郁</span>
+        <span class="tag">Robin Xing</span>
+        <span class="tag">Laura Wang</span>
+      </p>
+      <h3>分类</h3>
+      <p>
+        <span class="tag">宏观</span>
+        <span class="tag">策略</span>
+        <span class="tag">金工</span>
+        <span class="tag">固收</span>
+        <span class="tag">外资公开观点</span>
+      </p>
+    </section>
+
+    <section>
+      <h2>5. 系统模块</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>模块</th>
+            <th>职责</th>
+            <th>建议实现</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>采集器</td>
+            <td>公众号 API、网页抓取、搜索结果解析、PDF 下载。</td>
+            <td>Python 脚本；每个来源一个 adapter。</td>
+          </tr>
+          <tr>
+            <td>入库与去重</td>
+            <td>按 URL、标题、PDF 哈希去重，记录采集状态。</td>
+            <td>第一版用 JSONL 或 SQLite；推荐 SQLite。</td>
+          </tr>
+          <tr>
+            <td>文本提取</td>
+            <td>从网页正文和 PDF 中提取可总结文本。</td>
+            <td>网页用解析器；PDF 用文本提取库。</td>
+          </tr>
+          <tr>
+            <td>AI 总结</td>
+            <td>生成固定格式总结，并标注内容是否完整。</td>
+            <td>调用模型 API；失败时保留待总结状态。</td>
+          </tr>
+          <tr>
+            <td>网页看板</td>
+            <td>展示新增内容、PDF、总结、缺口和人工待处理项。</td>
+            <td>静态 HTML + JSON 数据即可。</td>
+          </tr>
+          <tr>
+            <td>自动化调度</td>
+            <td>定时运行采集与更新任务。</td>
+            <td>Codex 自动化或 Windows 任务计划程序。</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>6. 建议目录结构</h2>
+      <pre><code>research-assistant/
+  config/
+    sources.yaml
+    keywords.yaml
+  data/
+    research.sqlite
+    raw/
+  pdfs/
+  output/
+    index.html
+    assets/
+  src/
+    collectors/
+    extractors/
+    summarizer/
+    dashboard/
+  logs/</code></pre>
+    </section>
+
+    <section>
+      <h2>7. 配置样例</h2>
+      <p>新项目第一步先做配置驱动，后续新增来源时尽量只改配置，不改主流程。</p>
+      <pre><code>wechat_accounts:
+  - name: 郭磊宏观茶座
+    category: 宏观
+    priority: P0
+  - name: 广发证券研究
+    category: 策略
+    priority: P0
+  - name: 华创宏观
+    category: 宏观
+    priority: P0
+
+keywords:
+  - 郭磊 广发宏观 周报
+  - 张瑜 华创宏观 快评
+  - 刘晨明 广发策略
+  - 张继强 华泰固收
+  - Robin Xing China outlook
+
+web_sources:
+  - name: 慧博投研
+    url: https://www.hibor.com.cn/
+    source_type: web
+  - name: Morgan Stanley Asia Research
+    url: https://www.morganstanley.com/asiaresearch/country-and-region/china.html
+    source_type: web</code></pre>
+    </section>
+
+    <section>
+      <h2>8. 数据模型</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>字段</th>
+            <th>含义</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><code>id</code></td><td>内容唯一 ID。</td></tr>
+          <tr><td><code>title</code></td><td>文章或报告标题。</td></tr>
+          <tr><td><code>source</code></td><td>来源名称，例如华创宏观、慧博、东方财富。</td></tr>
+          <tr><td><code>source_type</code></td><td><code>wechat</code>、<code>web</code>、<code>pdf</code>、<code>mini_program</code>。</td></tr>
+          <tr><td><code>author_or_team</code></td><td>分析师或团队。</td></tr>
+          <tr><td><code>category</code></td><td>宏观、策略、金工、固收、外资公开观点。</td></tr>
+          <tr><td><code>published_at</code></td><td>发布时间。</td></tr>
+          <tr><td><code>url</code></td><td>原文链接。</td></tr>
+          <tr><td><code>pdf_path</code></td><td>公开 PDF 的本地路径。</td></tr>
+          <tr><td><code>summary</code></td><td>AI 总结。</td></tr>
+          <tr><td><code>status</code></td><td><code>collected</code>、<code>summary_pending</code>、<code>need_manual</code>、<code>pending_gui</code>。</td></tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section>
+      <h2>9. AI总结格式</h2>
+      <p>每篇内容统一生成这四块，方便横向比较。</p>
+      <pre><code>核心观点：
+- 用 2-4 条列出作者最重要的判断。
+
+关键证据/数据：
+- 摘出关键宏观数据、市场数据、行业指标或政策依据。
+
+市场含义：
+- 说明对股票、债券、汇率、商品或行业配置的可能影响。
+
+完整性说明：
+- 标明总结基于完整原文、公开摘要、网页转载，还是仅标题线索。</code></pre>
+    </section>
+
+    <section>
+      <h2>10. 执行路线</h2>
+      <div class="timeline">
+        <div>第 1 步</div>
+        <div>建立新项目目录、配置文件、SQLite 数据库和基础命令入口。</div>
+        <div>第 2 步</div>
+        <div>跑通 3 个公众号、3 个关键词、2 个网页源的最小采集闭环。</div>
+        <div>第 3 步</div>
+        <div>加入 PDF 下载、文本提取、去重和失败状态记录。</div>
+        <div>第 4 步</div>
+        <div>接入 AI 总结，输出固定格式摘要。</div>
+        <div>第 5 步</div>
+        <div>生成本地网页看板，展示新增内容、总结、PDF 和待处理缺口。</div>
+        <div>第 6 步</div>
+        <div>连续试运行两周，统计缺口后再做券商小程序 GUI 自动化。</div>
+      </div>
+    </section>
+
+    <section>
+      <h2>11. 推荐命令入口</h2>
+      <p>新项目可设计成以下命令。具体命令名可调整，但能力边界建议保持清晰。</p>
+      <pre><code>python -m src.cli init
+python -m src.cli collect --source wechat
+python -m src.cli collect --source web
+python -m src.cli summarize --pending
+python -m src.cli render-dashboard
+python -m src.cli run-once</code></pre>
+      <p class="muted"><code>run-once</code> 用于 Codex 自动化或 Windows 任务计划程序定时触发：采集、入库、总结、渲染网页一次跑完。</p>
+    </section>
+
+    <section>
+      <h2>12. 测试与验收</h2>
+      <ul>
+        <li>用 3 个公众号、3 个关键词、2 个公开网页源先做最小闭环。</li>
+        <li>重复运行两次，确认同一 URL、标题和 PDF 不会重复入库。</li>
+        <li>确认公开 PDF 能下载、提取文本、生成总结。</li>
+        <li>确认本地网页能正确展示中文、链接、PDF 路径、AI 总结和状态。</li>
+        <li>确认失败内容不会中断流程，而是进入 <code>need_manual</code> 或 <code>summary_pending</code>。</li>
+        <li>两周后统计缺口，再决定小程序 GUI 自动化优先级。</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>13. 后续阶段</h2>
+      <ol>
+        <li>先跑通公众号、网页和公开 PDF。</li>
+        <li>连续试运行两周，统计哪些核心内容缺失。</li>
+        <li>再为广发、华泰、兴业、华创、华西等券商小程序设计微信 PC GUI 自动化。</li>
+        <li>最后再考虑 HERMES 或其他本机助手作为通知、调度或对话入口。</li>
+      </ol>
+    </section>
+  </main>
+
+  <script>
+    const checklistId = "research-assistant-plan-checklist";
+    const inputs = Array.from(document.querySelectorAll("#featureChecklist input[type='checkbox']"));
+
+    function loadChecklist() {
+      try {
+        const saved = JSON.parse(localStorage.getItem(checklistId) || "[]");
+        inputs.forEach((input, index) => {
+          input.checked = Boolean(saved[index]);
+        });
+      } catch (error) {
+        inputs.forEach(input => {
+          input.checked = false;
+        });
+      }
+    }
+
+    function saveChecklist() {
+      localStorage.setItem(checklistId, JSON.stringify(inputs.map(input => input.checked)));
+    }
+
+    function resetChecklist() {
+      inputs.forEach(input => {
+        input.checked = false;
+      });
+      saveChecklist();
+    }
+
+    inputs.forEach(input => {
+      input.addEventListener("change", saveChecklist);
+    });
+
+    loadChecklist();
+  </script>
+</body>
+</html>
