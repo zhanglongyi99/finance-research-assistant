@@ -21,6 +21,7 @@ python -m src.cli summarize --pending
 python -m src.cli render-dashboard
 python -m src.cli daily-report
 python -m src.cli status
+python -m src.cli test-model
 python -m src.cli run-once
 ```
 
@@ -33,6 +34,28 @@ python -m src.cli run-once
 - `.env.example`：本地环境变量示例。复制为 `.env` 后填写密钥或模型网关配置。
 
 第一版不会绕过付费墙、验证码或私有接口。当前自动化只监听已添加到 WeWe RSS 的公众号。
+
+## 模型 API
+
+项目预留了 OpenAI-compatible 模型接口，适合接入第三方 GPT 中转站。复制 `.env.example` 为 `.env` 后填写：
+
+```powershell
+AI_BASE_URL=https://your-gateway.example.com
+AI_API_KEY=your_api_key
+AI_MODEL=your_model_name
+```
+
+测试连通性：
+
+```powershell
+python -m src.cli test-model
+```
+
+默认摘要仍使用本地抽取式摘要，不会产生模型费用。显式启用模型摘要：
+
+```powershell
+python -m src.cli summarize --mode ai --limit 5
+```
 
 ## 公众号接入
 

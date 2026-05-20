@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -21,10 +22,27 @@ def ensure_dirs() -> None:
 
 
 def load_config() -> dict[str, Any]:
+    load_env()
     return {
         "sources": load_yaml(CONFIG_DIR / "sources.yaml"),
         "keywords": load_yaml(CONFIG_DIR / "keywords.yaml"),
     }
+
+
+def load_env(path: Path | None = None) -> None:
+    """Load a local .env file without overriding real environment variables."""
+    env_path = path or ROOT / ".env"
+    if not env_path.exists():
+        return
+    for raw_line in env_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
 
 
 def load_yaml(path: Path) -> dict[str, Any]:

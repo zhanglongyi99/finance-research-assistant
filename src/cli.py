@@ -11,8 +11,10 @@ from .collectors.wechat import collect_wechat_sources
 from .config import DB_PATH, OUTPUT_DIR, ensure_dirs, load_config
 from .dashboard.render import render_dashboard
 from .db import init_db, iter_pending_summaries, list_items, list_items_by_ids, list_urls, update_summary, upsert_item
+from .llm import ModelConfigError, OpenAICompatibleClient, load_model_settings
 from .models import ResearchItem
 from .reports.daily import generate_daily_report, generate_report_for_created_today
+from .summarizer.ai import summarize_row_with_ai
 from .summarizer.local import summarize_row
 
 
@@ -27,10 +29,13 @@ def main() -> None:
 
     summarize_parser = subparsers.add_parser("summarize", help="为待处理内容生成摘要")
     summarize_parser.add_argument("--pending", action="store_true", help="处理待摘要内容")
+    summarize_parser.add_argument("--mode", choices=["local", "ai"], default="local", help="摘要模式，默认使用本地抽取式摘要")
+    summarize_parser.add_argument("--limit", type=int, default=0, help="最多处理多少条；0 表示不限制")
 
     subparsers.add_parser("render-dashboard", help="渲染本地静态网页看板")
     subparsers.add_parser("daily-report", help="用今日入库内容生成一份日报")
     subparsers.add_parser("status", help="输出当前采集状态统计")
+    subparsers.add_parser("test-model", help="测试 OpenAI-compatible 模型 API 配置和连通性")
     subparsers.add_parser("run-once", help="采集、摘要、渲染一次跑完")
 
     args = parser.parse_args()
@@ -39,13 +44,15 @@ def main() -> None:
     elif args.command == "collect":
         command_collect(args.source)
     elif args.command == "summarize":
-        command_summarize()
+        command_summarize(mode=args.mode, limit=args.limit)
     elif args.command == "render-dashboard":
         command_render_dashboard()
     elif args.command == "daily-report":
         command_daily_report()
     elif args.command == "status":
         command_status()
+    elif args.command == "test-model":
+        command_test_model()
     elif args.command == "run-once":
         command_run_once()
 
@@ -77,14 +84,17 @@ def command_collect(source: str) -> list[str]:
     return new_ids
 
 
-def command_summarize() -> None:
+def command_summarize(*, mode: str = "local", limit: int = 0) -> None:
     init_db()
     count = 0
+    client = OpenAICompatibleClient() if mode == "ai" else None
     for row in iter_pending_summaries():
-        summary = summarize_row(row)
+        if limit and count >= limit:
+            break
+        summary = summarize_row_with_ai(row, client) if client else summarize_row(row)
         update_summary(row["id"], summary)
         count += 1
-    print(f"摘要完成：更新 {count} 条。")
+    print(f"摘要完成：模式 {mode}，更新 {count} 条。")
 
 
 def command_render_dashboard() -> None:
@@ -127,6 +137,28 @@ def command_status() -> None:
     print("状态分布：" + _format_counts(statuses))
     print("公众号覆盖：" + _format_counts(wechat_sources))
     print("WeWe RSS订阅：" + _format_wewe_feeds())
+
+
+def command_test_model() -> None:
+    try:
+        settings = load_model_settings()
+        client = OpenAICompatibleClient(settings)
+        answer = client.chat(
+            [
+                {"role": "system", "content": "你是财经助手的模型连通性测试器。"},
+                {"role": "user", "content": "请只回复：模型连通正常。"},
+            ],
+            temperature=0,
+            max_tokens=64,
+        )
+    except ModelConfigError as error:
+        print(f"模型配置不完整：{error}")
+        return
+    except Exception as error:
+        print(f"模型连通失败：{error}")
+        return
+    print(f"模型配置：{settings.model} @ {settings.base_url}")
+    print(f"模型回复：{answer}")
 
 
 def _format_counts(counts: dict[str, int]) -> str:
