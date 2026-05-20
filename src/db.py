@@ -22,6 +22,9 @@ CREATE TABLE IF NOT EXISTS research_items (
     raw_path TEXT DEFAULT '',
     text TEXT DEFAULT '',
     summary TEXT DEFAULT '',
+    ai_summary TEXT DEFAULT '',
+    ai_summary_model TEXT DEFAULT '',
+    ai_summary_at TEXT DEFAULT '',
     status TEXT NOT NULL,
     completeness TEXT DEFAULT '',
     error TEXT DEFAULT '',
@@ -46,6 +49,19 @@ def connect(path: Path = DB_PATH) -> sqlite3.Connection:
 def init_db(path: Path = DB_PATH) -> None:
     with connect(path) as conn:
         conn.executescript(SCHEMA)
+        _ensure_columns(conn)
+
+
+def _ensure_columns(conn: sqlite3.Connection) -> None:
+    columns = {row["name"] for row in conn.execute("PRAGMA table_info(research_items)")}
+    migrations = {
+        "ai_summary": "ALTER TABLE research_items ADD COLUMN ai_summary TEXT DEFAULT ''",
+        "ai_summary_model": "ALTER TABLE research_items ADD COLUMN ai_summary_model TEXT DEFAULT ''",
+        "ai_summary_at": "ALTER TABLE research_items ADD COLUMN ai_summary_at TEXT DEFAULT ''",
+    }
+    for column, sql in migrations.items():
+        if column not in columns:
+            conn.execute(sql)
 
 
 def upsert_item(item: ResearchItem) -> bool:
@@ -172,9 +188,52 @@ def iter_pending_summaries() -> Iterable[sqlite3.Row]:
     yield from rows
 
 
+def iter_pending_ai_summaries(*, limit: int = 5, resummarize: bool = False) -> Iterable[sqlite3.Row]:
+    init_db()
+    where = "TRIM(COALESCE(text, '')) != ''"
+    if not resummarize:
+        where += " AND TRIM(COALESCE(ai_summary, '')) = ''"
+    sql = f"""
+        SELECT * FROM research_items
+        WHERE {where}
+        ORDER BY published_at DESC
+    """
+    params: tuple[int, ...] = ()
+    if limit > 0:
+        sql += " LIMIT ?"
+        params = (limit,)
+    with connect() as conn:
+        rows = list(conn.execute(sql, params))
+    yield from rows
+
+
 def update_summary(item_id: str, summary: str, status: str = "summarized") -> None:
     with connect() as conn:
         conn.execute(
             "UPDATE research_items SET summary = ?, status = ?, updated_at = datetime('now') WHERE id = ?",
             (summary, status, item_id),
         )
+
+
+def update_ai_summary(item_id: str, summary: str, model: str) -> None:
+    with connect() as conn:
+        conn.execute(
+            """
+            UPDATE research_items
+            SET ai_summary = ?,
+                ai_summary_model = ?,
+                ai_summary_at = datetime('now'),
+                updated_at = datetime('now')
+            WHERE id = ?
+            """,
+            (summary, model, item_id),
+        )
+
+
+def count_ai_summaries() -> int:
+    init_db()
+    with connect() as conn:
+        row = conn.execute(
+            "SELECT COUNT(*) AS count FROM research_items WHERE TRIM(COALESCE(ai_summary, '')) != ''"
+        ).fetchone()
+    return int(row["count"] if row else 0)

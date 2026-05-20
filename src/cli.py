@@ -10,7 +10,18 @@ from .collectors.web import collect_web_sources
 from .collectors.wechat import collect_wechat_sources
 from .config import DB_PATH, OUTPUT_DIR, ensure_dirs, load_config
 from .dashboard.render import render_dashboard
-from .db import init_db, iter_pending_summaries, list_items, list_items_by_ids, list_urls, update_summary, upsert_item
+from .db import (
+    count_ai_summaries,
+    init_db,
+    iter_pending_ai_summaries,
+    iter_pending_summaries,
+    list_items,
+    list_items_by_ids,
+    list_urls,
+    update_ai_summary,
+    update_summary,
+    upsert_item,
+)
 from .llm import ModelConfigError, OpenAICompatibleClient, load_model_settings
 from .models import ResearchItem
 from .reports.daily import generate_daily_report, generate_report_for_created_today
@@ -36,6 +47,9 @@ def main() -> None:
     subparsers.add_parser("daily-report", help="用今日入库内容生成一份日报")
     subparsers.add_parser("status", help="输出当前采集状态统计")
     subparsers.add_parser("test-model", help="测试 OpenAI-compatible 模型 API 配置和连通性")
+    deep_parser = subparsers.add_parser("deep-summarize", help="用模型为已入库文章生成 AI 深度总结")
+    deep_parser.add_argument("--limit", type=int, default=5, help="最多处理多少条；0 表示不限制")
+    deep_parser.add_argument("--resummarize", action="store_true", help="重新生成已有 AI 总结")
     subparsers.add_parser("run-once", help="采集、摘要、渲染一次跑完")
 
     args = parser.parse_args()
@@ -53,6 +67,8 @@ def main() -> None:
         command_status()
     elif args.command == "test-model":
         command_test_model()
+    elif args.command == "deep-summarize":
+        command_deep_summarize(limit=args.limit, resummarize=args.resummarize)
     elif args.command == "run-once":
         command_run_once()
 
@@ -136,6 +152,7 @@ def command_status() -> None:
     print(f"数据库记录：{len(rows)} 条")
     print("状态分布：" + _format_counts(statuses))
     print("公众号覆盖：" + _format_counts(wechat_sources))
+    print(f"AI深度总结：{count_ai_summaries()} 条")
     print("WeWe RSS订阅：" + _format_wewe_feeds())
 
 
@@ -159,6 +176,19 @@ def command_test_model() -> None:
         return
     print(f"模型配置：{settings.model} @ {settings.base_url} ({settings.wire_api}, reasoning={settings.reasoning_effort or 'off'})")
     print(f"模型回复：{answer}")
+
+
+def command_deep_summarize(*, limit: int = 5, resummarize: bool = False) -> None:
+    init_db()
+    settings = load_model_settings()
+    client = OpenAICompatibleClient(settings)
+    count = 0
+    for row in iter_pending_ai_summaries(limit=limit, resummarize=resummarize):
+        print(f"AI总结中：{row['source']} / {row['title']}")
+        summary = summarize_row_with_ai(row, client)
+        update_ai_summary(row["id"], summary, settings.model)
+        count += 1
+    print(f"AI深度总结完成：模型 {settings.model}，更新 {count} 条。")
 
 
 def _format_counts(counts: dict[str, int]) -> str:

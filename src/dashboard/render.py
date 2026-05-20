@@ -13,7 +13,7 @@ def render_dashboard(output_path: Path | None = None) -> Path:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     output_path = output_path or OUTPUT_DIR / "index.html"
     rows = list_items(limit=500)
-    data = [dict(row) for row in rows]
+    data = [_with_effective_summary(dict(row)) for row in rows]
     (OUTPUT_DIR / "items.json").write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     output_path.write_text(_render_html(data), encoding="utf-8")
     return output_path
@@ -226,7 +226,7 @@ def _render_html(items: list[dict]) -> str:
 def _render_card(item: dict) -> str:
     title = item.get("title") or "未命名内容"
     url = html.escape(item.get("url") or "#")
-    summary = html.escape(item.get("summary") or "尚未生成摘要。")
+    summary = html.escape(item.get("effective_summary") or item.get("summary") or "尚未生成摘要。")
     published_at = item.get("published_at") or ""
     published_date = _date_key(published_at)
     pdf = item.get("pdf_path") or ""
@@ -238,6 +238,8 @@ def _render_card(item: dict) -> str:
         item.get("status", ""),
         item.get("completeness", ""),
     ]
+    if item.get("ai_summary"):
+        chips.append(f"AI总结: {item.get('ai_summary_model') or 'model'}")
     if pdf:
         chips.append(f"PDF: {pdf}")
     chip_html = "".join(f"<span class=\"chip\">{html.escape(str(chip))}</span>" for chip in chips if chip)
@@ -269,3 +271,11 @@ def _date_key(value: str) -> str:
         return datetime.fromisoformat(value.replace("Z", "+00:00")).date().isoformat()
     except ValueError:
         return ""
+
+
+def _with_effective_summary(item: dict) -> dict:
+    ai_summary = (item.get("ai_summary") or "").strip()
+    local_summary = (item.get("summary") or "").strip()
+    item["effective_summary"] = ai_summary or local_summary
+    item["summary_mode"] = "ai" if ai_summary else "local"
+    return item

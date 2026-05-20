@@ -90,6 +90,7 @@ def render_report_index() -> Path:
 def _metadata(report_id: str, now: datetime, items: list[dict], reason: str) -> dict:
     categories = {item.get("category") or "未分类" for item in items}
     sources = Counter(item.get("source") or "未知来源" for item in items)
+    ai_count = sum(1 for item in items if (item.get("ai_summary") or "").strip())
     return {
         "id": report_id,
         "title": f"{now:%Y-%m-%d} 财经助手日报",
@@ -99,12 +100,13 @@ def _metadata(report_id: str, now: datetime, items: list[dict], reason: str) -> 
         "category_count": len(categories),
         "source_count": len(sources),
         "sources": dict(sources),
-        "summary_mode": "当前使用已有本地摘要；后续可替换为逐篇深度总结模型。",
+        "summary_mode": f"优先使用 AI 深度总结；本报告 {ai_count}/{len(items)} 篇已有 AI 总结，其余回退本地摘要。",
     }
 
 
 def _article_payload(item: dict) -> dict:
-    summary = item.get("summary") or "尚未生成摘要。"
+    ai_summary = (item.get("ai_summary") or "").strip()
+    summary = ai_summary or item.get("summary") or "尚未生成摘要。"
     return {
         "id": item.get("id") or "",
         "title": item.get("title") or "未命名内容",
@@ -114,7 +116,7 @@ def _article_payload(item: dict) -> dict:
         "published_local": _local_datetime(item.get("published_at") or ""),
         "url": item.get("url") or "",
         "brief_summary": _brief_summary(summary),
-        "deep_summary_status": "待接入模型深度总结；当前沿用本地摘要。",
+        "deep_summary_status": f"已使用 AI 深度总结：{item.get('ai_summary_model') or 'model'}。" if ai_summary else "尚无 AI 深度总结；当前沿用本地摘要。",
         "watch_labels": _labels_for_text(" ".join([item.get("title") or "", summary])),
     }
 
