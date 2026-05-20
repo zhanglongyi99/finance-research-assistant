@@ -157,7 +157,7 @@ def command_test_model() -> None:
     except Exception as error:
         print(f"模型连通失败：{error}")
         return
-    print(f"模型配置：{settings.model} @ {settings.base_url}")
+    print(f"模型配置：{settings.model} @ {settings.base_url} ({settings.wire_api}, reasoning={settings.reasoning_effort or 'off'})")
     print(f"模型回复：{answer}")
 
 

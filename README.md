@@ -40,10 +40,14 @@ python -m src.cli run-once
 项目预留了 OpenAI-compatible 模型接口，适合接入第三方 GPT 中转站。复制 `.env.example` 为 `.env` 后填写：
 
 ```powershell
-AI_BASE_URL=https://your-gateway.example.com
+AI_BASE_URL=https://xfx.plus
 AI_API_KEY=your_api_key
-AI_MODEL=your_model_name
+AI_MODEL=gpt-5.5
+AI_WIRE_API=responses
+AI_REASONING_EFFORT=medium
 ```
+
+默认模型按当前规划设为 `gpt-5.5`，推理强度为 `medium`。如果第三方网关只支持 Chat Completions，将 `AI_WIRE_API` 改为 `chat`。
 
 测试连通性：
 
