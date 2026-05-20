@@ -4,6 +4,7 @@ import argparse
 import json
 import urllib.request
 from collections.abc import Iterable
+from pathlib import Path
 
 from .collectors.manual import collect_manual_links
 from .collectors.web import collect_web_sources
@@ -22,6 +23,7 @@ from .db import (
     update_summary,
     upsert_item,
 )
+from .extractors.images import content_images, extract_images
 from .llm import ModelConfigError, OpenAICompatibleClient, load_model_settings
 from .models import ResearchItem
 from .reports.daily import generate_daily_report, generate_report_for_created_today
@@ -47,6 +49,10 @@ def main() -> None:
     subparsers.add_parser("daily-report", help="用今日入库内容生成一份日报")
     subparsers.add_parser("status", help="输出当前采集状态统计")
     subparsers.add_parser("test-model", help="测试 OpenAI-compatible 模型 API 配置和连通性")
+    vision_parser = subparsers.add_parser("test-vision", help="测试模型是否能读取公众号文章图片 URL")
+    vision_parser.add_argument("--url", default="", help="直接指定图片 URL")
+    vision_parser.add_argument("--image-index", type=int, default=1, help="文章正文图片序号，从 1 开始")
+    vision_parser.add_argument("--all-images", action="store_true", help="从全部图片中选择，而不是只选正文图片")
     deep_parser = subparsers.add_parser("deep-summarize", help="用模型为已入库文章生成 AI 深度总结")
     deep_parser.add_argument("--limit", type=int, default=5, help="最多处理多少条；0 表示不限制")
     deep_parser.add_argument("--resummarize", action="store_true", help="重新生成已有 AI 总结")
@@ -67,6 +73,8 @@ def main() -> None:
         command_status()
     elif args.command == "test-model":
         command_test_model()
+    elif args.command == "test-vision":
+        command_test_vision(url=args.url, image_index=args.image_index, content_only=not args.all_images)
     elif args.command == "deep-summarize":
         command_deep_summarize(limit=args.limit, resummarize=args.resummarize)
     elif args.command == "run-once":
@@ -178,6 +186,40 @@ def command_test_model() -> None:
     print(f"模型回复：{answer}")
 
 
+def command_test_vision(*, url: str = "", image_index: int = 1, content_only: bool = True) -> None:
+    settings = load_model_settings()
+    client = OpenAICompatibleClient(settings)
+    image_url = url.strip()
+    title = "手动指定图片"
+    if not image_url:
+        row = _latest_image_row()
+        if not row:
+            print("没有找到带原始 HTML 的文章。")
+            return
+        title = row["title"]
+        raw_path = Path(row["raw_path"])
+        raw_html = raw_path.read_text(encoding="utf-8", errors="replace")
+        images = content_images(raw_html) if content_only else extract_images(raw_html)
+        if not images:
+            print(f"文章没有可用图片：{title}")
+            return
+        index = max(image_index, 1) - 1
+        if index >= len(images):
+            print(f"图片序号超出范围：共有 {len(images)} 张可选图片。")
+            return
+        image_url = images[index].url
+        print(f"文章：{row['source']} / {title}")
+        print(f"图片：{image_index}/{len(images)} {image_url}")
+    prompt = """请读取这张财经研报/公众号图片。
+如果它是图表、表格或PPT页，请提取标题、关键指标、数字、趋势和可能的市场含义。
+如果它只是封面、头像、二维码、装饰图或无法读取，请明确说明。
+输出保持简洁，用中文。"""
+    answer = client.vision(image_url=image_url, prompt=prompt)
+    print(f"模型配置：{settings.model} @ {settings.base_url} ({settings.wire_api})")
+    print("视觉识别结果：")
+    print(answer)
+
+
 def command_deep_summarize(*, limit: int = 5, resummarize: bool = False) -> None:
     init_db()
     settings = load_model_settings()
@@ -189,6 +231,13 @@ def command_deep_summarize(*, limit: int = 5, resummarize: bool = False) -> None
         update_ai_summary(row["id"], summary, settings.model)
         count += 1
     print(f"AI深度总结完成：模型 {settings.model}，更新 {count} 条。")
+
+
+def _latest_image_row():
+    for row in list_items(limit=5000):
+        if row["raw_path"]:
+            return row
+    return None
 
 
 def _format_counts(counts: dict[str, int]) -> str:

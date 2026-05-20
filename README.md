@@ -22,6 +22,7 @@ python -m src.cli render-dashboard
 python -m src.cli daily-report
 python -m src.cli status
 python -m src.cli test-model
+python -m src.cli test-vision --image-index 1
 python -m src.cli deep-summarize --limit 5
 python -m src.cli run-once
 ```
@@ -71,6 +72,14 @@ python -m src.cli render-dashboard
 ```
 
 AI 深度总结会写入本地 SQLite 的 `ai_summary` 字段。生成看板和日报时，会优先展示 AI 总结，没有 AI 总结的文章会回退到本地摘要。
+
+测试模型视觉能力：
+
+```powershell
+python -m src.cli test-vision --image-index 1
+```
+
+该命令会从最近一篇带原始 HTML 的文章中提取正文图片 URL，并让模型读取图片。当前已验证 `gpt-5.5` 可以直接读取部分微信公众号 `mmbiz.qpic.cn` 图片 URL。
 
 ## 公众号接入
 

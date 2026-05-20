@@ -52,7 +52,7 @@ class OpenAICompatibleClient:
 
     def chat(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         temperature: float = 0.2,
         max_tokens: int | None = None,
@@ -80,9 +80,38 @@ class OpenAICompatibleClient:
 
         return _extract_content(data)
 
+    def vision(self, *, image_url: str, prompt: str, max_tokens: int | None = 1200) -> str:
+        if self.settings.wire_api == "responses":
+            return self.chat(
+                [
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "input_text", "text": prompt},
+                            {"type": "input_image", "image_url": image_url},
+                        ],
+                    }
+                ],
+                temperature=0.1,
+                max_tokens=max_tokens,
+            )
+        return self.chat(
+            [
+                {
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": image_url}},
+                    ],
+                }
+            ],
+            temperature=0.1,
+            max_tokens=max_tokens,
+        )
+
     def _payload(
         self,
-        messages: list[dict[str, str]],
+        messages: list[dict[str, Any]],
         *,
         temperature: float,
         max_tokens: int | None,
