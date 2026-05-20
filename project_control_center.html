@@ -354,7 +354,7 @@
   <main>
     <header>
       <h1>财经助手项目总控台</h1>
-      <p class="subtitle">更新时间：2026-05-20 16:19（Asia/Shanghai）。本文件是后续跨窗口交接、进度同步、需求整理和产品方向沉淀的第一入口。</p>
+      <p class="subtitle">更新时间：2026-05-20 16:33（Asia/Shanghai）。本文件是后续跨窗口交接、进度同步、需求整理和产品方向沉淀的第一入口。</p>
       <p class="note"><strong>当前定位：</strong>一个以研报知识库为基础、以每日 AI 简报和引用式问答为核心的个人财经研究助手。当前开发主线仍以微信公众号研报为核心，行情、新闻、提醒和实时数据先作为未来模块预留。</p>
     </header>
 
@@ -386,7 +386,7 @@
           <tr><td>看板</td><td><span class="pill good">可用</span></td><td>静态主看板支持来源、分类、状态、搜索、日期区间和排序。</td></tr>
           <tr><td>日报</td><td><span class="pill good">架构完成</span></td><td>有新增文章时生成本轮日报；已有 2026-05-20 测试日报。</td></tr>
           <tr><td>自动化</td><td><span class="pill good">已启用</span></td><td>每天 08:45 和 17:15 运行 <code>python -m src.cli run-once</code>。</td></tr>
-          <tr><td>Git/GitHub 开源</td><td><span class="pill warn">本地 Git 已初始化</span></td><td>已补充开源忽略规则、README 和环境变量示例；仍待创建 GitHub 远程仓库并推送。</td></tr>
+          <tr><td>Git/GitHub 开源</td><td><span class="pill good">已发布</span></td><td>本地 Git 已初始化并推送到 <a href="https://github.com/zhanglongyi99/finance-research-assistant">GitHub 仓库</a>。</td></tr>
           <tr><td>云端化</td><td><span class="pill warn">待设计</span></td><td>当前仍是本地脚本、SQLite、静态 HTML 和本地 WeWe RSS 的组合。</td></tr>
         </tbody>
       </table>
@@ -525,7 +525,7 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td>Git 版本控制与 GitHub 开源</td><td>P0</td><td><span class="pill warn">本地准备中</span></td><td>已初始化本地 Git、补充 <code>.gitignore</code>、<code>.gitattributes</code>、README 和 <code>.env.example</code>；待创建 GitHub 远程仓库。</td></tr>
+          <tr><td>Git 版本控制与 GitHub 开源</td><td>P0</td><td><span class="pill good">已完成首版</span></td><td>已初始化本地 Git、补充开源边界文件，并推送到 <a href="https://github.com/zhanglongyi99/finance-research-assistant">GitHub</a>。</td></tr>
           <tr><td>产品总控文档长期维护</td><td>P0</td><td><span class="pill good">已创建</span></td><td>后续新增需求、决策、问题和进度都同步到本页。</td></tr>
           <tr><td>OpenAI-compatible 模型 API 接入</td><td>P0</td><td><span class="pill warn">待开发</span></td><td>用户有第三方 GPT 中转站，后续用环境变量配置。</td></tr>
           <tr><td>AI 深度总结与今日简报台</td><td>P0</td><td><span class="pill warn">待开发</span></td><td>基于新增研报定时预生成。</td></tr>
@@ -576,7 +576,7 @@
     <section>
       <h2>下一步计划</h2>
       <ol>
-        <li><strong>P0：GitHub 远程仓库发布。</strong> 创建 GitHub 仓库，连接远程地址，推送本地首个版本，并确认 GitHub 页面未包含运行数据或密钥。</li>
+        <li><strong>P0：GitHub 仓库首轮复查。</strong> 在网页端确认 README、源码、配置模板和文档展示正常，并确认未包含运行数据或密钥。</li>
         <li><strong>P0：模型 API 接入方案。</strong> 设计 OpenAI-compatible 配置项和调用层，用用户的第三方 GPT 中转站做一次最小连通验证。</li>
         <li><strong>P0：深度总结最小闭环。</strong> 在不破坏现有本地摘要的前提下，新增模型总结模块，并让日报/简报优先使用模型总结。</li>
         <li><strong>P1：研报问答原型。</strong> 建立基础检索、文章级引用回答和近期对话历史保存。</li>
@@ -608,6 +608,8 @@
     <section>
       <h2>更新日志</h2>
       <div class="timeline">
+        <div>2026-05-20 16:33</div>
+        <div>完成 GitHub 首次发布：本地 <code>main</code> 分支已推送到 <code>zhanglongyi99/finance-research-assistant</code>，后续可在该仓库继续版本管理。</div>
         <div>2026-05-20 16:19</div>
         <div>完成 Git 本地初始化准备：新增开源忽略规则、换行规则、环境变量示例，更新 README，并确认运行数据、大型输出和本地密钥不会进入仓库。</div>
         <div>2026-05-20 16:10</div>
@@ -639,6 +641,10 @@
         <a href="README.md">
           <strong>README</strong>
           <span>查看当前命令入口和项目说明。</span>
+        </a>
+        <a href="https://github.com/zhanglongyi99/finance-research-assistant">
+          <strong>GitHub 仓库</strong>
+          <span>查看开源代码仓库和远程版本。</span>
         </a>
       </div>
     </section>
