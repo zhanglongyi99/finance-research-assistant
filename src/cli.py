@@ -13,14 +13,20 @@ from .config import DB_PATH, OUTPUT_DIR, ensure_dirs, load_config
 from .dashboard.render import render_dashboard
 from .db import (
     count_ai_summaries,
+    count_article_images,
     init_db,
+    iter_pending_image_summaries,
     iter_pending_ai_summaries,
     iter_pending_summaries,
+    list_article_image_summaries,
     list_items,
     list_items_by_ids,
+    list_items_with_raw_html,
     list_urls,
     update_ai_summary,
+    update_image_summary,
     update_summary,
+    upsert_article_images,
     upsert_item,
 )
 from .extractors.images import content_images, extract_images
@@ -56,6 +62,11 @@ def main() -> None:
     deep_parser = subparsers.add_parser("deep-summarize", help="用模型为已入库文章生成 AI 深度总结")
     deep_parser.add_argument("--limit", type=int, default=5, help="最多处理多少条；0 表示不限制")
     deep_parser.add_argument("--resummarize", action="store_true", help="重新生成已有 AI 总结")
+    index_images_parser = subparsers.add_parser("index-images", help="从文章原始 HTML 提取并入库图片清单")
+    index_images_parser.add_argument("--limit", type=int, default=0, help="最多处理多少篇文章；0 表示不限制")
+    summarize_images_parser = subparsers.add_parser("summarize-images", help="用视觉模型为正文图片生成摘要")
+    summarize_images_parser.add_argument("--limit", type=int, default=10, help="最多处理多少张图片；0 表示不限制")
+    summarize_images_parser.add_argument("--resummarize", action="store_true", help="重新生成已有视觉摘要")
     subparsers.add_parser("run-once", help="采集、摘要、渲染一次跑完")
 
     args = parser.parse_args()
@@ -77,6 +88,10 @@ def main() -> None:
         command_test_vision(url=args.url, image_index=args.image_index, content_only=not args.all_images)
     elif args.command == "deep-summarize":
         command_deep_summarize(limit=args.limit, resummarize=args.resummarize)
+    elif args.command == "index-images":
+        command_index_images(limit=args.limit)
+    elif args.command == "summarize-images":
+        command_summarize_images(limit=args.limit, resummarize=args.resummarize)
     elif args.command == "run-once":
         command_run_once()
 
@@ -161,6 +176,8 @@ def command_status() -> None:
     print("状态分布：" + _format_counts(statuses))
     print("公众号覆盖：" + _format_counts(wechat_sources))
     print(f"AI深度总结：{count_ai_summaries()} 条")
+    total_images, content_images_count, image_summary_count = count_article_images()
+    print(f"文章图片：{total_images} 张，正文图 {content_images_count} 张，视觉摘要 {image_summary_count} 张")
     print("WeWe RSS订阅：" + _format_wewe_feeds())
 
 
@@ -227,10 +244,55 @@ def command_deep_summarize(*, limit: int = 5, resummarize: bool = False) -> None
     count = 0
     for row in iter_pending_ai_summaries(limit=limit, resummarize=resummarize):
         print(f"AI总结中：{row['source']} / {row['title']}")
-        summary = summarize_row_with_ai(row, client)
+        image_summaries = _image_summaries_for_article(row["id"])
+        summary = summarize_row_with_ai(row, client, image_summaries=image_summaries)
         update_ai_summary(row["id"], summary, settings.model)
         count += 1
     print(f"AI深度总结完成：模型 {settings.model}，更新 {count} 条。")
+
+
+def command_index_images(*, limit: int = 0) -> None:
+    init_db()
+    scanned = 0
+    image_count = 0
+    content_count = 0
+    changed = 0
+    for row in list_items_with_raw_html(limit=limit):
+        raw_path = Path(row["raw_path"])
+        if not raw_path.exists():
+            continue
+        raw_html = raw_path.read_text(encoding="utf-8", errors="replace")
+        images = extract_images(raw_html)
+        if not images:
+            continue
+        scanned += 1
+        image_count += len(images)
+        content_count += sum(1 for image in images if image.likely_content)
+        changed += upsert_article_images(row["id"], images)
+    print(
+        f"图片索引完成：扫描 {scanned} 篇带图片文章，发现 {image_count} 张图片，"
+        f"其中正文图 {content_count} 张，写入/更新 {changed} 条。"
+    )
+
+
+def command_summarize_images(*, limit: int = 10, resummarize: bool = False) -> None:
+    init_db()
+    settings = load_model_settings()
+    client = OpenAICompatibleClient(settings)
+    count = 0
+    failed = 0
+    for row in iter_pending_image_summaries(limit=limit, resummarize=resummarize):
+        print(f"视觉摘要中：{row['article_source']} / {row['article_title']} / 图 {row['image_index']}")
+        prompt = _vision_summary_prompt(row)
+        try:
+            summary = client.vision(image_url=row["url"], prompt=prompt, max_tokens=1200)
+        except Exception as error:
+            failed += 1
+            print(f"视觉摘要失败：图 {row['image_index']}，{error}")
+            continue
+        update_image_summary(row["id"], summary, settings.model)
+        count += 1
+    print(f"视觉摘要完成：模型 {settings.model}，更新 {count} 张图片，失败 {failed} 张。")
 
 
 def _latest_image_row():
@@ -238,6 +300,37 @@ def _latest_image_row():
         if row["raw_path"]:
             return row
     return None
+
+
+def _vision_summary_prompt(row) -> str:
+    alt = row["alt"] or "无"
+    ratio = row["ratio"] or 0
+    width = row["width"] or 0
+    height = row["height"] or 0
+    return f"""请读取这张财经研报/公众号正文图片，并生成可入库复用的视觉摘要。
+
+文章标题：{row["article_title"]}
+来源：{row["article_source"]}
+图片序号：{row["image_index"]}
+图片 alt：{alt}
+图片尺寸线索：ratio={ratio}, width={width}, height={height}
+
+要求：
+- 如果是图表、表格或PPT页，提取标题、关键指标、数字、趋势、结论和可能的市场含义。
+- 如果是目录页，提取主要章节和研究主题。
+- 如果仍然像封面、头像、二维码、广告或装饰图，请明确标注“噪声图”，并简述原因。
+- 不要编造看不见的数字；看不清时写“未能辨认”。
+- 输出中文，控制在 4-8 行。"""
+
+
+def _image_summaries_for_article(article_id: str) -> list[str]:
+    summaries = []
+    for row in list_article_image_summaries(article_id):
+        meta = f"图片 {row['image_index']}"
+        if row["alt"]:
+            meta += f"（alt: {row['alt']}）"
+        summaries.append(f"{meta}：\n{row['vision_summary']}")
+    return summaries
 
 
 def _format_counts(counts: dict[str, int]) -> str:

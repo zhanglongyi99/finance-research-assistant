@@ -354,7 +354,7 @@
   <main>
     <header>
       <h1>财经助手项目总控台</h1>
-      <p class="subtitle">更新时间：2026-05-20 17:28（Asia/Shanghai）。本文件是后续跨窗口交接、进度同步、需求整理和产品方向沉淀的第一入口。</p>
+      <p class="subtitle">更新时间：2026-05-20 17:43（Asia/Shanghai）。本文件是后续跨窗口交接、进度同步、需求整理和产品方向沉淀的第一入口。</p>
       <p class="note"><strong>当前定位：</strong>一个以研报知识库为基础、以每日 AI 简报和引用式问答为核心的个人财经研究助手。当前开发主线仍以微信公众号研报为核心，行情、新闻、提醒和实时数据先作为未来模块预留。</p>
     </header>
 
@@ -364,7 +364,7 @@
         <div class="metric"><strong>180</strong><span>SQLite 公众号文章记录</span></div>
         <div class="metric"><strong>180</strong><span>已生成本地摘要</span></div>
         <div class="metric"><strong>9</strong><span>WeWe RSS 当前订阅源</span></div>
-        <div class="metric"><strong>1</strong><span>已生成测试日报</span></div>
+        <div class="metric"><strong>10</strong><span>已生成视觉摘要</span></div>
       </div>
       <p class="muted">本页不包含 API key、账号状态、数据库内容或公众号原文正文。需要查看历史技术交接时，打开 <a href="project_progress_report.html">project_progress_report.html</a>。</p>
     </section>
@@ -382,7 +382,8 @@
         <tbody>
           <tr><td>数据主线</td><td><span class="pill good">可用</span></td><td>当前收敛为微信公众号 / WeWe RSS 单一生产数据源。</td></tr>
           <tr><td>入库与去重</td><td><span class="pill good">可用</span></td><td>SQLite 按 URL 去重，当前 180 条记录均为 <code>source_type=wechat</code>。</td></tr>
-          <tr><td>摘要</td><td><span class="pill good">AI 小批量已跑通</span></td><td>180 条均已有本地抽取式摘要；已新增独立 <code>ai_summary</code> 字段，并用 <code>gpt-5.5</code> 生成 5 条 AI 深度总结。</td></tr>
+          <tr><td>摘要</td><td><span class="pill good">AI 小批量已跑通</span></td><td>180 条均已有本地抽取式摘要；已新增独立 <code>ai_summary</code> 字段，并用 <code>gpt-5.5</code> 生成 5 条 AI 深度总结，其中 1 条已重跑并合并视觉摘要。</td></tr>
+          <tr><td>图片资产</td><td><span class="pill good">索引与视觉摘要已跑通</span></td><td>新增 <code>article_images</code> 表；已从原始 HTML 入库 3819 张图片，其中 3079 张为正文图，并生成 10 张视觉摘要。</td></tr>
           <tr><td>看板</td><td><span class="pill good">可用</span></td><td>静态主看板支持来源、分类、状态、搜索、日期区间和排序。</td></tr>
           <tr><td>日报</td><td><span class="pill good">架构完成</span></td><td>有新增文章时生成本轮日报；已有 2026-05-20 测试日报。</td></tr>
           <tr><td>自动化</td><td><span class="pill good">已启用</span></td><td>每天 08:45 和 17:15 运行 <code>python -m src.cli run-once</code>。</td></tr>
@@ -510,6 +511,7 @@
         <li>配置早盘和收盘两条 Codex 自动化任务。</li>
         <li>明确第一版产品形态：简报 / 问答 / 资料库。</li>
         <li>新增本项目总控文档，作为后续交接和需求同步入口。</li>
+        <li>新增图片资产入库和视觉摘要链路：<code>index-images</code>、<code>summarize-images</code>，并让 <code>deep-summarize</code> 合并已入库视觉摘要。</li>
       </ul>
     </section>
 
@@ -528,7 +530,8 @@
           <tr><td>Git 版本控制与 GitHub 开源</td><td>P0</td><td><span class="pill good">已完成首版</span></td><td>已初始化本地 Git、补充开源边界文件，并推送到 <a href="https://github.com/zhanglongyi99/finance-research-assistant">GitHub</a>。</td></tr>
           <tr><td>产品总控文档长期维护</td><td>P0</td><td><span class="pill good">已创建</span></td><td>后续新增需求、决策、问题和进度都同步到本页。</td></tr>
           <tr><td>OpenAI-compatible 模型 API 接入</td><td>P0</td><td><span class="pill good">已连通</span></td><td>已新增模型客户端、<code>test-model</code> 命令和 <code>deep-summarize</code>；默认模型为 <code>gpt-5.5</code>，API key 只保存在本地 <code>.env</code>。</td></tr>
-          <tr><td>AI 深度总结与今日简报台</td><td>P0</td><td><span class="pill warn">总结闭环已起步</span></td><td>AI 深度总结已能写入 SQLite，主看板和日报会优先展示 AI 总结；视觉读图 URL 直传已小样本验证可行，今日简报台仍待产品化。</td></tr>
+          <tr><td>AI 深度总结与今日简报台</td><td>P0</td><td><span class="pill warn">总结闭环已起步</span></td><td>AI 深度总结已能写入 SQLite，主看板和日报会优先展示 AI 总结；视觉摘要已入库并可并入深度总结，今日简报台仍待产品化。</td></tr>
+          <tr><td>图片资产与视觉摘要</td><td>P0</td><td><span class="pill good">首轮完成</span></td><td>已新增 <code>article_images</code> 表和 <code>index-images</code>、<code>summarize-images</code> 命令；首轮入库 3819 张图片，生成 10 张视觉摘要。</td></tr>
           <tr><td>研报引用式问答</td><td>P1</td><td><span class="pill warn">待设计</span></td><td>默认查已入库研报，回答带文章级引用。</td></tr>
           <tr><td>云端访问版本</td><td>P1</td><td><span class="pill warn">待设计</span></td><td>供少量用户访问，不按高并发设计。</td></tr>
           <tr><td>资料库 UI 升级</td><td>P1</td><td><span class="pill warn">待设计</span></td><td>沿用现有筛选列表能力，融入新平台外壳。</td></tr>
@@ -578,8 +581,8 @@
       <ol>
         <li><strong>P0：GitHub 仓库首轮复查。</strong> 在网页端确认 README、源码、配置模板和文档展示正常，并确认未包含运行数据或密钥。</li>
         <li><strong>P0：AI 总结质量复核。</strong> 长文已改为“分块提取 + 最终合成”，先人工查看已生成的 5 条 AI 深度总结，确认格式、质量和费用边界，再决定是否批量处理更多文章。</li>
-        <li><strong>P0：图片资产与视觉摘要。</strong> 提取并保存文章图片清单，优先对图表/PPT页调用视觉模型生成 <code>image_summary</code>，再并入研报最终总结。</li>
-        <li><strong>P0：今日简报模型化。</strong> 基于 <code>ai_summary</code> 和后续 <code>image_summary</code> 生成更像投研 briefing 的首页摘要，同时保留本地摘要作为失败兜底。</li>
+        <li><strong>P0：今日简报模型化。</strong> 基于 <code>ai_summary</code> 和 <code>vision_summary</code> 生成更像投研 briefing 的首页摘要，同时保留本地摘要作为失败兜底。</li>
+        <li><strong>P0：视觉摘要质量复核与扩量。</strong> 人工抽查已生成的 10 张视觉摘要，确认噪声过滤和图表提取质量，再决定是否批量处理更多正文图。</li>
         <li><strong>P1：研报问答原型。</strong> 建立基础检索、文章级引用回答和近期对话历史保存。</li>
         <li><strong>P1：平台 UI 改造。</strong> 将现有看板升级为简报 / 问答 / 资料库的静态或 Web 应用结构。</li>
         <li><strong>P1：云端化设计。</strong> 确认部署方式、数据库方案、WeWe RSS 位置、只读访问权限和少量用户访问路径。</li>
@@ -609,6 +612,8 @@
     <section>
       <h2>更新日志</h2>
       <div class="timeline">
+        <div>2026-05-20 17:43</div>
+        <div>完成图片资产与视觉摘要首轮闭环：新增 <code>article_images</code> 表，新增 <code>index-images</code> 和 <code>summarize-images</code> 命令；已从原始 HTML 入库 3819 张图片，其中 3079 张为正文图，用 <code>gpt-5.5</code> 生成 10 张视觉摘要，并重跑 1 篇 AI 深度总结以合并视觉摘要。</div>
         <div>2026-05-20 17:28</div>
         <div>完成视觉能力小样本验证：新增图片 URL 提取与 <code>test-vision</code> 命令，确认 <code>gpt-5.5</code> 可直接读取微信公众号 <code>mmbiz.qpic.cn</code> 图片 URL，并能提取目录页和图表页的关键信息。</div>
         <div>2026-05-20 17:19</div>

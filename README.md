@@ -9,7 +9,7 @@
 - 数据源：本地 WeWe RSS (`http://localhost:4000`) 中已订阅的微信公众号。
 - 数据库：SQLite，默认路径为 `data/research.sqlite`。
 - 输出：主看板 `output/index.html`，日报索引 `output/reports/index.html`。
-- 摘要：当前为本地抽取式摘要，后续计划接入 OpenAI-compatible 模型 API。
+- 摘要：本地抽取式摘要已全量生成；AI 深度总结、图片资产索引和视觉摘要已跑通小批量闭环。
 - 总控文档：后续交接、需求池和进度记录统一维护在 `project_control_center.html`。
 
 ## 常用命令
@@ -23,6 +23,8 @@ python -m src.cli daily-report
 python -m src.cli status
 python -m src.cli test-model
 python -m src.cli test-vision --image-index 1
+python -m src.cli index-images
+python -m src.cli summarize-images --limit 10
 python -m src.cli deep-summarize --limit 5
 python -m src.cli run-once
 ```
@@ -80,6 +82,16 @@ python -m src.cli test-vision --image-index 1
 ```
 
 该命令会从最近一篇带原始 HTML 的文章中提取正文图片 URL，并让模型读取图片。当前已验证 `gpt-5.5` 可以直接读取部分微信公众号 `mmbiz.qpic.cn` 图片 URL。
+
+图片资产与视觉摘要入库：
+
+```powershell
+python -m src.cli index-images
+python -m src.cli summarize-images --limit 10
+python -m src.cli deep-summarize --limit 1 --resummarize
+```
+
+`index-images` 会从每篇文章的 `raw_path` 原始 HTML 中提取图片，写入本地 SQLite 的 `article_images` 表，并标记头像、封面、二维码、广告、赞赏图等噪声图。`summarize-images` 只默认处理正文图，调用视觉模型读取图片 URL，写入 `vision_summary`、`vision_model` 和 `vision_summary_at`。后续 `deep-summarize` 会把同一文章已存在的视觉摘要作为补充材料并入最终 AI 深度总结。
 
 ## 公众号接入
 

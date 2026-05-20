@@ -64,7 +64,17 @@ def content_images(raw_html: str) -> list[ArticleImage]:
 
 
 def _is_likely_content_image(*, url: str, alt: str, attrs: dict[str, str]) -> bool:
-    joined = " ".join([url, alt, attrs.get("class", ""), attrs.get("id", "")]).lower()
+    joined = " ".join(
+        [
+            url,
+            alt,
+            attrs.get("class", ""),
+            attrs.get("id", ""),
+            attrs.get("title", ""),
+            attrs.get("data-type", ""),
+            attrs.get("data-cropselx1", ""),
+        ]
+    ).lower()
     noise_markers = (
         "cover_image",
         "avatar",
@@ -76,10 +86,30 @@ def _is_likely_content_image(*, url: str, alt: str, attrs: dict[str, str]) -> bo
         "barcode",
         "reward",
         "logo",
+        "icon",
+        "profile_photo",
+        "js_profile",
+        "share",
+        "赞赏",
+        "二维码",
+        "扫码",
+        "关注",
+        "头像",
+        "封面",
+        "名片",
+        "广告",
+        "海报",
     )
     if any(marker in joined for marker in noise_markers):
         return False
     if "mmbiz.qpic.cn" not in url and "qpic.cn" not in url:
+        return False
+    width = _int(attrs.get("data-w") or attrs.get("width") or "0")
+    height = _int(attrs.get("data-h") or attrs.get("height") or "0")
+    if width and height and width <= 96 and height <= 96:
+        return False
+    ratio = _float(attrs.get("data-ratio", "0"))
+    if ratio and (ratio < 0.08 or ratio > 5):
         return False
     return True
 

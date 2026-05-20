@@ -11,7 +11,11 @@ SYSTEM_PROMPT = """你是一个严谨的中文财经研报阅读助手。
 如果正文信息不足，请在完整性说明里明确指出。"""
 
 
-def summarize_row_with_ai(row: sqlite3.Row, client: OpenAICompatibleClient | None = None) -> str:
+def summarize_row_with_ai(
+    row: sqlite3.Row,
+    client: OpenAICompatibleClient | None = None,
+    image_summaries: list[str] | None = None,
+) -> str:
     text = (row["text"] or "").strip()
     title = row["title"] or "未命名内容"
     source = row["source"] or "未知来源"
@@ -29,9 +33,11 @@ def summarize_row_with_ai(row: sqlite3.Row, client: OpenAICompatibleClient | Non
             published_at=published_at,
             completeness=completeness,
             text=text,
+            image_summaries=image_summaries or [],
         )
 
     article_text, material_scope = _prepare_article_text(text, len(text))
+    image_context = _format_image_summaries(image_summaries or [])
 
     user_prompt = f"""请用固定格式总结以下财经研报/公众号文章。
 
@@ -40,6 +46,7 @@ def summarize_row_with_ai(row: sqlite3.Row, client: OpenAICompatibleClient | Non
 发布时间：{published_at}
 文本完整性：{completeness}
 本次提供材料：{material_scope}
+视觉材料摘要：{image_context}
 
 输出格式必须为：
 核心观点：
@@ -77,6 +84,7 @@ def _summarize_long_text(
     published_at: str,
     completeness: str,
     text: str,
+    image_summaries: list[str],
 ) -> str:
     chunk_chars = _int_env("AI_SUMMARY_CHUNK_CHARS", 10000)
     chunks = _split_chunks(text, chunk_chars)
@@ -119,11 +127,13 @@ def _summarize_long_text(
     final_prompt = f"""请基于以下分段摘要，生成整篇财经研报/公众号文章的最终深度总结。
 注意：分段摘要覆盖了入库正文全文，原文共 {len(text)} 字符，被拆分为 {len(chunks)} 段处理。
 请不要声称正文在某个短句处截断；如果存在噪声或免责声明，只在完整性说明里说明。
+如果视觉材料摘要提供了图表、表格或PPT页信息，请把其中有价值的指标和市场含义并入最终总结；如果没有视觉材料摘要，则忽略此项。
 
 标题：{title}
 来源：{source}
 发布时间：{published_at}
 文本完整性：{completeness}
+视觉材料摘要：{_format_image_summaries(image_summaries)}
 
 输出格式必须为：
 核心观点：
@@ -178,3 +188,10 @@ def _int_env(name: str, default: int) -> int:
 def _split_chunks(text: str, chunk_chars: int) -> list[str]:
     chunk_chars = max(chunk_chars, 2000)
     return [text[start:start + chunk_chars] for start in range(0, len(text), chunk_chars)]
+
+
+def _format_image_summaries(image_summaries: list[str]) -> str:
+    cleaned = [summary.strip() for summary in image_summaries if summary.strip()]
+    if not cleaned:
+        return "暂无已入库的正文图片视觉摘要。"
+    return "\n" + "\n\n".join(cleaned)
