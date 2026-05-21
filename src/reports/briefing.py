@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import html
 import json
+import re
 from collections import Counter
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -163,7 +164,13 @@ def _render_html(payload: dict) -> str:
     .takeaways li {{ margin: 4px 0; }}
     details {{ margin-top: 10px; color: #334155; }}
     summary {{ cursor: pointer; color: #126c68; font-size: 13px; }}
-    .full-summary {{ margin: 8px 0 0; font-size: 14px; line-height: 1.72; color: #334155; }}
+    .full-summary {{ margin: 10px 0 0; font-size: 14px; line-height: 1.72; color: #334155; }}
+    .summary-section {{ border-top: 1px solid #edf2f7; padding-top: 8px; margin-top: 8px; }}
+    .summary-section:first-child {{ border-top: 0; padding-top: 0; margin-top: 0; }}
+    .summary-section h4 {{ margin: 0 0 6px; color: #123c3a; font-size: 14px; }}
+    .summary-section ul {{ margin: 0; padding-left: 18px; }}
+    .summary-section li {{ margin: 4px 0; }}
+    .summary-paragraph {{ margin: 6px 0; }}
     @media (max-width: 800px) {{ main {{ width: calc(100% - 16px); margin: 8px auto; }} header, section {{ padding: 18px; }} .grid {{ grid-template-columns: 1fr; }} .card {{ padding: 12px 14px; }} }}
   </style>
 </head>
@@ -196,29 +203,22 @@ def _render_article(index: int, article: dict) -> str:
     chip_html = "".join(f"<span class=\"chip\">{html.escape(str(chip))}</span>" for chip in chips if chip)
     takeaways = _summary_takeaways(article["summary"], limit=2)
     takeaways_html = "".join(f"<li>{html.escape(item)}</li>" for item in takeaways) or "<li>暂无摘要。</li>"
-    full_summary = html.escape(_clean_summary(article["summary"]) or "暂无摘要。")
+    full_summary = _render_summary_html(article["summary"])
     return f"""<div class="card">
   <h3 class="card-title"><span class="ref">[{index}]</span><a href="{html.escape(article['url'])}" target="_blank" rel="noreferrer">{html.escape(article['title'])}</a></h3>
   <div class="chips">{chip_html}</div>
   <ul class="takeaways">{takeaways_html}</ul>
   <details>
     <summary>展开完整摘要</summary>
-    <p class="full-summary">{full_summary}</p>
+    <div class="full-summary">{full_summary}</div>
   </details>
 </div>"""
 
 
 def _summary_takeaways(summary: str, *, limit: int = 2) -> list[str]:
-    cleaned = _clean_summary(summary)
-    if not cleaned:
-        return []
-    candidates = []
-    for raw_line in cleaned.splitlines():
-        line = raw_line.strip(" -\t")
-        if not line or line.endswith("："):
-            continue
-        candidates.append(line)
+    candidates = [line.strip(" -\t") for line in _normalized_summary_lines(summary) if line.startswith("- ")]
     if not candidates:
+        cleaned = _clean_summary(summary)
         candidates = [part.strip() for part in cleaned.replace("；", "。").split("。") if part.strip()]
     return [_truncate(item, 92) for item in candidates[:limit]]
 
@@ -231,3 +231,64 @@ def _truncate(text: str, max_chars: int) -> str:
     if len(text) <= max_chars:
         return text
     return text[: max_chars - 1].rstrip() + "…"
+
+
+def _render_summary_html(summary: str) -> str:
+    lines = _normalized_summary_lines(summary)
+    if not lines:
+        return '<p class="summary-paragraph">暂无摘要。</p>'
+
+    sections: list[tuple[str, list[str]]] = []
+    paragraphs: list[str] = []
+    current_title = ""
+    current_items: list[str] = []
+
+    def flush_section() -> None:
+        nonlocal current_title, current_items
+        if current_title or current_items:
+            sections.append((current_title or "摘要", current_items))
+        current_title = ""
+        current_items = []
+
+    for line in lines:
+        section = _section_title(line)
+        if section:
+            flush_section()
+            current_title = section
+            continue
+        if line.startswith("- "):
+            current_items.append(line[2:].strip())
+            continue
+        if current_title:
+            current_items.append(line)
+        else:
+            paragraphs.append(line)
+
+    flush_section()
+
+    parts = [f'<p class="summary-paragraph">{html.escape(paragraph)}</p>' for paragraph in paragraphs]
+    for title, items in sections:
+        item_html = "".join(f"<li>{html.escape(item)}</li>" for item in items if item)
+        if item_html:
+            parts.append(f'<div class="summary-section"><h4>{html.escape(title)}</h4><ul>{item_html}</ul></div>')
+        else:
+            parts.append(f'<div class="summary-section"><h4>{html.escape(title)}</h4></div>')
+    return "".join(parts) or '<p class="summary-paragraph">暂无摘要。</p>'
+
+
+def _normalized_summary_lines(summary: str) -> list[str]:
+    text = _clean_summary(summary)
+    if not text:
+        return []
+    for section in ("核心观点", "关键证据/数据", "市场含义", "风险提示", "完整性说明"):
+        text = re.sub(rf"\s*{re.escape(section)}[：:]\s*", f"\n{section}：\n", text)
+    text = re.sub(r"\s+-\s+", "\n- ", text)
+    return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+def _section_title(line: str) -> str:
+    stripped = line.strip()
+    for section in ("核心观点", "关键证据/数据", "市场含义", "风险提示", "完整性说明"):
+        if stripped in {section, f"{section}：", f"{section}:"}:
+            return section
+    return ""
