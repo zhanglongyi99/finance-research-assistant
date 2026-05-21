@@ -6,6 +6,7 @@ import urllib.request
 from collections.abc import Iterable
 from pathlib import Path
 
+from .app.server import run_app_server
 from .collectors.manual import collect_manual_links
 from .collectors.web import collect_web_sources
 from .collectors.wechat import collect_wechat_sources
@@ -86,6 +87,10 @@ def main() -> None:
     ask_parser.add_argument("question", help="要询问的问题")
     ask_parser.add_argument("--limit", type=int, default=6, help="最多引用多少篇文章")
     ask_parser.add_argument("--local", action="store_true", help="只返回检索结果，不调用模型生成答案")
+    serve_parser = subparsers.add_parser("serve", help="启动本地 Web UI")
+    serve_parser.add_argument("--host", default="127.0.0.1", help="监听地址")
+    serve_parser.add_argument("--port", type=int, default=8765, help="监听端口")
+    serve_parser.add_argument("--open", action="store_true", help="启动后自动打开浏览器")
     subparsers.add_parser("run-once", help="采集、摘要、渲染一次跑完")
 
     args = parser.parse_args()
@@ -119,6 +124,8 @@ def main() -> None:
         command_generate_briefing(limit=args.limit, use_ai=not args.local)
     elif args.command == "ask":
         command_ask(question=args.question, limit=args.limit, use_ai=not args.local)
+    elif args.command == "serve":
+        command_serve(host=args.host, port=args.port, open_browser=args.open)
     elif args.command == "run-once":
         command_run_once()
 
@@ -380,6 +387,10 @@ def command_ask(*, question: str, limit: int = 6, use_ai: bool = True) -> None:
         else:
             raise
     print(answer)
+
+
+def command_serve(*, host: str = "127.0.0.1", port: int = 8765, open_browser: bool = False) -> None:
+    run_app_server(host=host, port=port, open_browser=open_browser)
 
 
 def _latest_image_row():

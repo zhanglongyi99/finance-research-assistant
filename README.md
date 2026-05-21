@@ -30,6 +30,7 @@ python -m src.cli audit-ai-summaries --limit 0
 python -m src.cli deep-summarize --limit 5
 python -m src.cli generate-briefing --limit 8
 python -m src.cli ask "中游制造和权益资产怎么看" --limit 4
+python -m src.cli serve
 python -m src.cli run-once
 ```
 
@@ -114,6 +115,14 @@ python -m src.cli generate-briefing --limit 8
 ```
 
 AI 简报输出到 `output/briefing/latest.html` 和 `output/briefing/latest.json`。生成时会优先使用 AI 深度总结和可用视觉摘要，并按“投研阅读地图”组织内容：宏观经济形势、市场环境与资产含义、风险/黑天鹅/非共识观点、细分领域专业分析、需要跟踪和本期引用。篇幅和主线数量由当天材料密度决定。失败时可加 `--local` 生成本地兜底版，兜底版输出到 `output/briefing/local.html`，不会覆盖最新 AI 简报。
+
+启动本地 UI：
+
+```powershell
+python -m src.cli serve
+```
+
+默认从 `http://127.0.0.1:8765/` 启动；如果端口被占用，会自动顺延尝试后续端口。当前本地 UI 是云端化前的产品壳，整合了投研阅读地图、研报库筛选、引用式问答和运行状态；它直接读取本地 SQLite、`output/briefing/latest.json` 和现有模型配置，不会上传本地数据。
 
 引用式问答原型：
 
