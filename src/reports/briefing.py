@@ -152,11 +152,19 @@ def _render_html(payload: dict) -> str:
     a:hover {{ text-decoration: underline; }}
     .muted {{ color: #5f6b7a; }}
     .briefing {{ white-space: pre-wrap; }}
-    .grid {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }}
-    .card {{ border: 1px solid #d9e1ea; border-radius: 8px; padding: 14px; }}
-    .chips {{ display: flex; flex-wrap: wrap; gap: 6px; }}
-    .chip {{ border: 1px solid #d9e1ea; border-radius: 999px; padding: 2px 8px; color: #5f6b7a; font-size: 12px; }}
-    @media (max-width: 800px) {{ main {{ width: calc(100% - 24px); }} .grid {{ grid-template-columns: 1fr; }} }}
+    .grid {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }}
+    .card {{ border: 1px solid #d9e1ea; border-radius: 8px; padding: 14px 16px; background: #fff; }}
+    .card h3 {{ font-size: 16px; margin-bottom: 10px; }}
+    .card-title {{ display: flex; gap: 8px; align-items: flex-start; }}
+    .ref {{ flex: 0 0 auto; border: 1px solid #c9d7e3; border-radius: 6px; color: #126c68; font-size: 12px; line-height: 1; padding: 5px 6px; margin-top: 1px; }}
+    .chips {{ display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 10px; }}
+    .chip {{ border: 1px solid #d9e1ea; border-radius: 999px; padding: 2px 8px; color: #5f6b7a; font-size: 12px; line-height: 1.5; background: #fbfcfd; }}
+    .takeaways {{ margin: 8px 0 0 0; padding-left: 18px; }}
+    .takeaways li {{ margin: 4px 0; }}
+    details {{ margin-top: 10px; color: #334155; }}
+    summary {{ cursor: pointer; color: #126c68; font-size: 13px; }}
+    .full-summary {{ margin: 8px 0 0; font-size: 14px; line-height: 1.72; color: #334155; }}
+    @media (max-width: 800px) {{ main {{ width: calc(100% - 16px); margin: 8px auto; }} header, section {{ padding: 18px; }} .grid {{ grid-template-columns: 1fr; }} .card {{ padding: 12px 14px; }} }}
   </style>
 </head>
 <body>
@@ -180,16 +188,46 @@ def _render_html(payload: dict) -> str:
 
 def _render_article(index: int, article: dict) -> str:
     chips = [
-        f"[{index}]",
         article["source"],
         article["category"],
         article["summary_mode"],
         f"视觉摘要 {article['image_summary_count']}",
     ]
     chip_html = "".join(f"<span class=\"chip\">{html.escape(str(chip))}</span>" for chip in chips if chip)
-    brief = article["summary"][:260] or "暂无摘要。"
+    takeaways = _summary_takeaways(article["summary"], limit=2)
+    takeaways_html = "".join(f"<li>{html.escape(item)}</li>" for item in takeaways) or "<li>暂无摘要。</li>"
+    full_summary = html.escape(_clean_summary(article["summary"]) or "暂无摘要。")
     return f"""<div class="card">
-  <h3><a href="{html.escape(article['url'])}" target="_blank" rel="noreferrer">{html.escape(article['title'])}</a></h3>
+  <h3 class="card-title"><span class="ref">[{index}]</span><a href="{html.escape(article['url'])}" target="_blank" rel="noreferrer">{html.escape(article['title'])}</a></h3>
   <div class="chips">{chip_html}</div>
-  <p>{html.escape(brief)}</p>
+  <ul class="takeaways">{takeaways_html}</ul>
+  <details>
+    <summary>展开完整摘要</summary>
+    <p class="full-summary">{full_summary}</p>
+  </details>
 </div>"""
+
+
+def _summary_takeaways(summary: str, *, limit: int = 2) -> list[str]:
+    cleaned = _clean_summary(summary)
+    if not cleaned:
+        return []
+    candidates = []
+    for raw_line in cleaned.splitlines():
+        line = raw_line.strip(" -\t")
+        if not line or line.endswith("："):
+            continue
+        candidates.append(line)
+    if not candidates:
+        candidates = [part.strip() for part in cleaned.replace("；", "。").split("。") if part.strip()]
+    return [_truncate(item, 92) for item in candidates[:limit]]
+
+
+def _clean_summary(summary: str) -> str:
+    return "\n".join(line.strip() for line in (summary or "").splitlines() if line.strip())
+
+
+def _truncate(text: str, max_chars: int) -> str:
+    if len(text) <= max_chars:
+        return text
+    return text[: max_chars - 1].rstrip() + "…"
