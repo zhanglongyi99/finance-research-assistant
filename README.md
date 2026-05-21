@@ -113,7 +113,7 @@ python -m src.cli audit-ai-summaries --limit 0
 python -m src.cli generate-briefing --limit 8
 ```
 
-AI 简报输出到 `output/briefing/latest.html` 和 `output/briefing/latest.json`。生成时会优先使用 AI 深度总结和可用视觉摘要，并按“短结论、三条主线、分领域观点、跟踪事项、关键引用”的框架组织内容。失败时可加 `--local` 生成本地兜底版，兜底版输出到 `output/briefing/local.html`，不会覆盖最新 AI 简报。
+AI 简报输出到 `output/briefing/latest.html` 和 `output/briefing/latest.json`。生成时会优先使用 AI 深度总结和可用视觉摘要，并按“投研阅读地图”组织内容：宏观经济形势、市场环境与资产含义、风险/黑天鹅/非共识观点、细分领域专业分析、需要跟踪和本期引用。篇幅和主线数量由当天材料密度决定。失败时可加 `--local` 生成本地兜底版，兜底版输出到 `output/briefing/local.html`，不会覆盖最新 AI 简报。
 
 引用式问答原型：
 

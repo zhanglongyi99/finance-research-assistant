@@ -91,44 +91,40 @@ def _ai_briefing(payload: dict) -> str:
 链接：{article['url']}"""
         )
 
-    prompt = f"""请基于以下已入库财经研报材料，生成一份“先结论、后分领域”的投研简报。
+    prompt = f"""请基于以下已入库财经研报材料，生成一份“投研阅读地图”。
 只使用材料中的信息，不要编造未出现的事实。引用文章时使用 [序号]。
 
 重要要求：
-- 不要平均介绍每篇文章，也不要按文章顺序堆摘要。
-- 先判断本期最重要的 1 条主线，再提炼 2-3 条次级主线。
-- 如果多篇文章都在讲科技资产、AI 或中游制造，请合并成一个主题，不要重复。
-- 每条观点都要尽量说明“为什么重要”和“影响什么资产/行业”。
-- 对材料证据不足的地方要写成“待验证”，不要强行下结论。
-- 总字数控制在 750-1100 个中文字符，宁可少而清楚。
-- 不要罗列过多行业名称；同一条观点最多举 3 个代表行业或资产。
-- 分领域观点只保留有信息增量的领域，每个领域 1-2 条，每条不超过 80 个中文字符。
-- 本期引用最多列 5 篇最关键材料，不要逐篇凑满。
+- 不要按文章顺序堆摘要，也不要强行压缩成固定数量的主线。
+- 根据当天材料的实际密度决定篇幅和主线数量：材料复杂时可以展开，材料单薄时保持简洁。
+- 读者关注顺序是：宏观经济形势、市场环境分析、黑天鹅/风险提示/不常见观点、细分领域专业分析。
+- 页面结构不必机械照搬关注顺序，但必须让读者快速看出“这批研报究竟在改变什么判断”。
+- 如果多篇文章围绕同一主题，如科技资产、AI、中游制造、电力或利率，请合并分析并标注分歧或互相印证之处。
+- 每条观点尽量包含：核心判断、为什么重要、影响什么资产/行业、证据来自哪篇材料。
+- 对材料证据不足、逻辑跳跃或仍需验证的地方，明确写成“待验证”或“需复核”，不要强行下结论。
+- 保留专业表达和关键专有名词，但要解释其市场含义，避免只有术语没有判断。
 
 输出格式必须严格使用以下标题：
-一句话结论：
-用 1 句话说明本期最核心判断，不超过 60 个中文字符。
+本期阅读地图：
+- 用 2-4 条说明这批材料最值得怎么读；不要写成一句话口号。
 
-最重要的 3 件事：
-- 主线1：观点 + 原因 + 影响方向 + 引用，不超过 100 个中文字符
-- 主线2：观点 + 原因 + 影响方向 + 引用，不超过 100 个中文字符
-- 主线3：观点 + 原因 + 影响方向 + 引用，不超过 100 个中文字符
+宏观经济形势：
+- 梳理增长、通胀、政策、利率、汇率、外需等宏观线索；没有信息增量的可少写。
 
-分领域观点：
-宏观与政策：
-- ...
-权益与行业：
-- ...
-固收与利率：
-- ...
-汇率、商品与海外：
-- ...
+市场环境与资产含义：
+- 分析权益、债券、商品、汇率、REITs、资金面或风格切换的含义；按材料实际出现的内容展开。
+
+风险、黑天鹅与非共识观点：
+- 提炼风险提示、黑天鹅情境、反常识观点、少数派判断，以及这些观点为什么值得注意。
+
+细分领域专业分析：
+- 对电力、AI/科技、中游制造、公用事业、REITs 等细分主题做专业拆解；主题数量由材料决定。
 
 需要跟踪：
-- 3 条后续观察清单，按重要性排序。
+- 后续观察清单，按重要性排序；数量由材料决定。
 
 本期引用：
-- [序号] 文章标题：一句话说明这篇材料贡献了什么证据。
+- [序号] 文章标题：说明这篇材料贡献了什么证据或判断。
 
 材料：
 {chr(10).join(materials)}
@@ -178,6 +174,7 @@ def _render_html(payload: dict) -> str:
     .briefing-section {{ border: 1px solid #d9e1ea; border-radius: 8px; padding: 14px 16px; background: #fff; }}
     .briefing-section h3 {{ margin: 0 0 8px; font-size: 16px; }}
     .briefing-section h4 {{ margin: 12px 0 6px; font-size: 14px; color: #126c68; }}
+    .briefing-section strong {{ color: #123c3a; }}
     .briefing-section ul {{ margin: 0; padding-left: 18px; }}
     .briefing-section li {{ margin: 6px 0; }}
     .briefing-section p {{ margin: 6px 0; }}
@@ -251,7 +248,6 @@ def _render_briefing_html(briefing: str) -> str:
     sections: list[tuple[str, list[str]]] = []
     current_title = ""
     current_lines: list[str] = []
-    lede = ""
 
     def flush() -> None:
         nonlocal current_title, current_lines
@@ -266,23 +262,14 @@ def _render_briefing_html(briefing: str) -> str:
             flush()
             current_title = title
             remainder = _title_remainder(line, title)
-            if title == "一句话结论" and remainder:
-                lede = remainder
-            elif remainder:
+            if remainder:
                 current_lines.append(remainder)
-            continue
-        if current_title == "一句话结论" and not lede:
-            lede = line.strip(" -")
             continue
         current_lines.append(line)
     flush()
 
     parts = []
-    if lede:
-        parts.append(f'<div class="briefing-lede">{html.escape(lede)}</div>')
     for title, body_lines in sections:
-        if title == "一句话结论":
-            continue
         parts.append(_render_briefing_section(title, body_lines))
     return "".join(parts) or '<div class="briefing-section"><p>暂无简报。</p></div>'
 
@@ -294,7 +281,7 @@ def _render_briefing_section(title: str, lines: list[str]) -> str:
     def flush_items() -> None:
         nonlocal items
         if items:
-            item_html = "".join(f"<li>{html.escape(item)}</li>" for item in items if item)
+            item_html = "".join(f"<li>{_format_inline(item)}</li>" for item in items if item)
             blocks.append(f"<ul>{item_html}</ul>")
         items = []
 
@@ -306,16 +293,34 @@ def _render_briefing_section(title: str, lines: list[str]) -> str:
             blocks.append(f"<h4>{html.escape(line.rstrip('：'))}</h4>")
         else:
             flush_items()
-            blocks.append(f"<p>{html.escape(line)}</p>")
+            blocks.append(f"<p>{_format_inline(line)}</p>")
     flush_items()
     return f'<div class="briefing-section"><h3>{html.escape(title)}</h3>{"".join(blocks)}</div>'
 
 
 def _briefing_title(line: str) -> str:
     normalized = line.strip().strip("#").strip()
-    for title in ("一句话结论", "最重要的 3 件事", "最重要的3件事", "分领域观点", "需要跟踪", "本期引用"):
+    titles = (
+        "本期阅读地图",
+        "宏观经济形势",
+        "市场环境与资产含义",
+        "风险、黑天鹅与非共识观点",
+        "风险、黑天鹅和非共识观点",
+        "细分领域专业分析",
+        "需要跟踪",
+        "本期引用",
+        "一句话结论",
+        "最重要的 3 件事",
+        "最重要的3件事",
+        "分领域观点",
+    )
+    for title in titles:
         if normalized.startswith(title):
-            return "最重要的 3 件事" if title == "最重要的3件事" else title
+            if title == "最重要的3件事":
+                return "最重要的 3 件事"
+            if title == "风险、黑天鹅和非共识观点":
+                return "风险、黑天鹅与非共识观点"
+            return title
     return ""
 
 
@@ -323,6 +328,11 @@ def _title_remainder(line: str, title: str) -> str:
     value = line.strip().strip("#").strip()
     value = value[len(title):].strip()
     return value.strip("：: ").strip()
+
+
+def _format_inline(text: str) -> str:
+    escaped = html.escape(text)
+    return re.sub(r"\*\*(.+?)\*\*", r"<strong>\1</strong>", escaped)
 
 
 def _summary_takeaways(summary: str, *, limit: int = 2) -> list[str]:
