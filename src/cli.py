@@ -14,16 +14,21 @@ from .dashboard.render import render_dashboard
 from .db import (
     count_ai_summaries,
     count_article_images,
+    count_image_quality,
     init_db,
     iter_pending_image_summaries,
     iter_pending_ai_summaries,
     iter_pending_summaries,
+    list_ai_summaries_for_review,
     list_article_image_summaries,
     list_items,
     list_items_by_ids,
     list_items_with_raw_html,
     list_urls,
+    mark_ai_summary_review,
+    sample_image_summaries,
     update_ai_summary,
+    update_image_quality,
     update_image_summary,
     update_summary,
     upsert_article_images,
@@ -32,6 +37,9 @@ from .db import (
 from .extractors.images import content_images, extract_images
 from .llm import ModelConfigError, OpenAICompatibleClient, load_model_settings
 from .models import ResearchItem
+from .quality import assess_ai_summary, classify_vision_summary
+from .qa import answer_question
+from .reports.briefing import generate_briefing
 from .reports.daily import generate_daily_report, generate_report_for_created_today
 from .summarizer.ai import summarize_row_with_ai
 from .summarizer.local import summarize_row
@@ -67,6 +75,17 @@ def main() -> None:
     summarize_images_parser = subparsers.add_parser("summarize-images", help="用视觉模型为正文图片生成摘要")
     summarize_images_parser.add_argument("--limit", type=int, default=10, help="最多处理多少张图片；0 表示不限制")
     summarize_images_parser.add_argument("--resummarize", action="store_true", help="重新生成已有视觉摘要")
+    audit_images_parser = subparsers.add_parser("audit-image-summaries", help="自动标记已生成视觉摘要的类型和质量")
+    audit_images_parser.add_argument("--limit", type=int, default=0, help="最多复核多少张；0 表示不限制")
+    audit_ai_parser = subparsers.add_parser("audit-ai-summaries", help="自动检查 AI 深度总结结构完整性")
+    audit_ai_parser.add_argument("--limit", type=int, default=20, help="最多复核多少篇；0 表示不限制")
+    briefing_parser = subparsers.add_parser("generate-briefing", help="基于近期入库研报生成 AI 简报")
+    briefing_parser.add_argument("--limit", type=int, default=12, help="纳入最近多少篇文章")
+    briefing_parser.add_argument("--local", action="store_true", help="不调用模型，仅生成本地兜底简报")
+    ask_parser = subparsers.add_parser("ask", help="基于已入库研报进行文章级引用问答")
+    ask_parser.add_argument("question", help="要询问的问题")
+    ask_parser.add_argument("--limit", type=int, default=6, help="最多引用多少篇文章")
+    ask_parser.add_argument("--local", action="store_true", help="只返回检索结果，不调用模型生成答案")
     subparsers.add_parser("run-once", help="采集、摘要、渲染一次跑完")
 
     args = parser.parse_args()
@@ -92,6 +111,14 @@ def main() -> None:
         command_index_images(limit=args.limit)
     elif args.command == "summarize-images":
         command_summarize_images(limit=args.limit, resummarize=args.resummarize)
+    elif args.command == "audit-image-summaries":
+        command_audit_image_summaries(limit=args.limit)
+    elif args.command == "audit-ai-summaries":
+        command_audit_ai_summaries(limit=args.limit)
+    elif args.command == "generate-briefing":
+        command_generate_briefing(limit=args.limit, use_ai=not args.local)
+    elif args.command == "ask":
+        command_ask(question=args.question, limit=args.limit, use_ai=not args.local)
     elif args.command == "run-once":
         command_run_once()
 
@@ -178,6 +205,9 @@ def command_status() -> None:
     print(f"AI深度总结：{count_ai_summaries()} 条")
     total_images, content_images_count, image_summary_count = count_article_images()
     print(f"文章图片：{total_images} 张，正文图 {content_images_count} 张，视觉摘要 {image_summary_count} 张")
+    quality_rows = count_image_quality()
+    if quality_rows:
+        print("视觉摘要质量：" + "，".join(f"{row['vision_kind']}/{row['review_status']}={row['count']}" for row in quality_rows))
     print("WeWe RSS订阅：" + _format_wewe_feeds())
 
 
@@ -290,9 +320,66 @@ def command_summarize_images(*, limit: int = 10, resummarize: bool = False) -> N
             failed += 1
             print(f"视觉摘要失败：图 {row['image_index']}，{error}")
             continue
-        update_image_summary(row["id"], summary, settings.model)
+        kind, quality, review_status, use_for_summary = classify_vision_summary(summary)
+        update_image_summary(
+            row["id"],
+            summary,
+            settings.model,
+            vision_kind=kind,
+            vision_quality=quality,
+            review_status=review_status,
+            use_for_summary=use_for_summary,
+        )
         count += 1
     print(f"视觉摘要完成：模型 {settings.model}，更新 {count} 张图片，失败 {failed} 张。")
+
+
+def command_audit_image_summaries(*, limit: int = 0) -> None:
+    init_db()
+    count = 0
+    for row in sample_image_summaries(limit=limit or 100000):
+        kind, quality, review_status, use_for_summary = classify_vision_summary(row["vision_summary"] or "")
+        update_image_quality(
+            row["id"],
+            vision_kind=kind,
+            vision_quality=quality,
+            review_status=review_status,
+            use_for_summary=use_for_summary,
+        )
+        count += 1
+    print(f"视觉摘要自动复核完成：更新 {count} 张。")
+    for row in count_image_quality():
+        print(f"- {row['vision_kind']} / {row['review_status']}: {row['count']}")
+
+
+def command_audit_ai_summaries(*, limit: int = 20) -> None:
+    init_db()
+    count = 0
+    statuses: dict[str, int] = {}
+    for row in list_ai_summaries_for_review(limit=limit):
+        status, note = assess_ai_summary(row["ai_summary"] or "")
+        mark_ai_summary_review(row["id"], status, note)
+        statuses[status] = statuses.get(status, 0) + 1
+        count += 1
+    print(f"AI深度总结自动复核完成：更新 {count} 篇。")
+    print("复核状态：" + _format_counts(statuses))
+
+
+def command_generate_briefing(*, limit: int = 12, use_ai: bool = True) -> None:
+    path = generate_briefing(limit=limit, use_ai=use_ai)
+    print(f"简报已生成：{path}")
+
+
+def command_ask(*, question: str, limit: int = 6, use_ai: bool = True) -> None:
+    try:
+        answer = answer_question(question, limit=limit, use_ai=use_ai)
+    except Exception as error:
+        if use_ai:
+            print(f"AI问答失败，回退本地检索：{error}")
+            answer = answer_question(question, limit=limit, use_ai=False)
+        else:
+            raise
+    print(answer)
 
 
 def _latest_image_row():

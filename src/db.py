@@ -27,6 +27,8 @@ CREATE TABLE IF NOT EXISTS research_items (
     ai_summary TEXT DEFAULT '',
     ai_summary_model TEXT DEFAULT '',
     ai_summary_at TEXT DEFAULT '',
+    ai_review_status TEXT DEFAULT '',
+    ai_review_note TEXT DEFAULT '',
     status TEXT NOT NULL,
     completeness TEXT DEFAULT '',
     error TEXT DEFAULT '',
@@ -52,6 +54,10 @@ CREATE TABLE IF NOT EXISTS article_images (
     vision_summary TEXT DEFAULT '',
     vision_model TEXT DEFAULT '',
     vision_summary_at TEXT DEFAULT '',
+    vision_kind TEXT DEFAULT '',
+    vision_quality INTEGER DEFAULT 0,
+    review_status TEXT DEFAULT '',
+    use_for_summary INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY(article_id) REFERENCES research_items(id)
@@ -82,6 +88,8 @@ def _ensure_columns(conn: sqlite3.Connection) -> None:
         "ai_summary": "ALTER TABLE research_items ADD COLUMN ai_summary TEXT DEFAULT ''",
         "ai_summary_model": "ALTER TABLE research_items ADD COLUMN ai_summary_model TEXT DEFAULT ''",
         "ai_summary_at": "ALTER TABLE research_items ADD COLUMN ai_summary_at TEXT DEFAULT ''",
+        "ai_review_status": "ALTER TABLE research_items ADD COLUMN ai_review_status TEXT DEFAULT ''",
+        "ai_review_note": "ALTER TABLE research_items ADD COLUMN ai_review_note TEXT DEFAULT ''",
     }
     for column, sql in migrations.items():
         if column not in columns:
@@ -98,6 +106,10 @@ def _ensure_columns(conn: sqlite3.Connection) -> None:
             "vision_summary": "ALTER TABLE article_images ADD COLUMN vision_summary TEXT DEFAULT ''",
             "vision_model": "ALTER TABLE article_images ADD COLUMN vision_model TEXT DEFAULT ''",
             "vision_summary_at": "ALTER TABLE article_images ADD COLUMN vision_summary_at TEXT DEFAULT ''",
+            "vision_kind": "ALTER TABLE article_images ADD COLUMN vision_kind TEXT DEFAULT ''",
+            "vision_quality": "ALTER TABLE article_images ADD COLUMN vision_quality INTEGER DEFAULT 0",
+            "review_status": "ALTER TABLE article_images ADD COLUMN review_status TEXT DEFAULT ''",
+            "use_for_summary": "ALTER TABLE article_images ADD COLUMN use_for_summary INTEGER NOT NULL DEFAULT 1",
             "created_at": "ALTER TABLE article_images ADD COLUMN created_at TEXT NOT NULL DEFAULT ''",
             "updated_at": "ALTER TABLE article_images ADD COLUMN updated_at TEXT NOT NULL DEFAULT ''",
         }
@@ -312,6 +324,7 @@ def upsert_article_images(article_id: str, images: list[ArticleImage]) -> int:
             width = excluded.width,
             height = excluded.height,
             is_content_image = excluded.is_content_image,
+            use_for_summary = CASE WHEN excluded.is_content_image = 1 THEN article_images.use_for_summary ELSE 0 END,
             updated_at = {now_sql}
     """
     values = []
@@ -356,7 +369,19 @@ def iter_pending_image_summaries(
         FROM article_images
         JOIN research_items ON research_items.id = article_images.article_id
         WHERE {" AND ".join(where)}
-        ORDER BY research_items.published_at DESC, article_images.image_index ASC
+        ORDER BY
+            CASE
+                WHEN article_images.width >= 900 THEN 0
+                WHEN article_images.width >= 700 THEN 1
+                ELSE 2
+            END,
+            CASE
+                WHEN article_images.ratio BETWEEN 0.30 AND 0.95 THEN 0
+                WHEN article_images.ratio BETWEEN 0.95 AND 1.60 THEN 1
+                ELSE 2
+            END,
+            research_items.published_at DESC,
+            article_images.image_index ASC
     """
     params: tuple[int, ...] = ()
     if limit > 0:
@@ -367,7 +392,16 @@ def iter_pending_image_summaries(
     yield from rows
 
 
-def update_image_summary(image_id: str, summary: str, model: str) -> None:
+def update_image_summary(
+    image_id: str,
+    summary: str,
+    model: str,
+    *,
+    vision_kind: str = "",
+    vision_quality: int = 0,
+    review_status: str = "",
+    use_for_summary: bool = True,
+) -> None:
     with connect() as conn:
         conn.execute(
             """
@@ -375,11 +409,54 @@ def update_image_summary(image_id: str, summary: str, model: str) -> None:
             SET vision_summary = ?,
                 vision_model = ?,
                 vision_summary_at = datetime('now'),
+                vision_kind = ?,
+                vision_quality = ?,
+                review_status = ?,
+                use_for_summary = ?,
                 updated_at = datetime('now')
             WHERE id = ?
             """,
-            (summary, model, image_id),
+            (summary, model, vision_kind, vision_quality, review_status, 1 if use_for_summary else 0, image_id),
         )
+
+
+def update_image_quality(
+    image_id: str,
+    *,
+    vision_kind: str,
+    vision_quality: int,
+    review_status: str,
+    use_for_summary: bool,
+) -> None:
+    with connect() as conn:
+        conn.execute(
+            """
+            UPDATE article_images
+            SET vision_kind = ?,
+                vision_quality = ?,
+                review_status = ?,
+                use_for_summary = ?,
+                updated_at = datetime('now')
+            WHERE id = ?
+            """,
+            (vision_kind, vision_quality, review_status, 1 if use_for_summary else 0, image_id),
+        )
+
+
+def list_ai_summaries_for_review(limit: int = 20) -> list[sqlite3.Row]:
+    init_db()
+    sql = """
+        SELECT id, source, title, ai_summary, ai_review_status, ai_review_note
+        FROM research_items
+        WHERE TRIM(COALESCE(ai_summary, '')) != ''
+        ORDER BY ai_summary_at DESC
+    """
+    params: tuple[int, ...] = ()
+    if limit > 0:
+        sql += " LIMIT ?"
+        params = (limit,)
+    with connect() as conn:
+        return list(conn.execute(sql, params))
 
 
 def list_article_image_summaries(article_id: str) -> list[sqlite3.Row]:
@@ -388,10 +465,11 @@ def list_article_image_summaries(article_id: str) -> list[sqlite3.Row]:
         return list(
             conn.execute(
                 """
-                SELECT image_index, alt, ratio, width, height, vision_summary, vision_model
+                SELECT image_index, alt, ratio, width, height, vision_summary, vision_model, vision_kind, vision_quality
                 FROM article_images
                 WHERE article_id = ?
                   AND is_content_image = 1
+                  AND use_for_summary = 1
                   AND TRIM(COALESCE(vision_summary, '')) != ''
                 ORDER BY image_index ASC
                 """,
@@ -424,3 +502,85 @@ def count_article_images() -> tuple[int, int, int]:
     if not row:
         return (0, 0, 0)
     return (int(row["total"] or 0), int(row["content_count"] or 0), int(row["summarized_count"] or 0))
+
+
+def count_image_quality() -> list[sqlite3.Row]:
+    init_db()
+    with connect() as conn:
+        return list(
+            conn.execute(
+                """
+                SELECT
+                    COALESCE(NULLIF(vision_kind, ''), 'unknown') AS vision_kind,
+                    COALESCE(NULLIF(review_status, ''), 'unreviewed') AS review_status,
+                    COUNT(*) AS count
+                FROM article_images
+                WHERE TRIM(COALESCE(vision_summary, '')) != ''
+                GROUP BY vision_kind, review_status
+                ORDER BY count DESC, vision_kind
+                """
+            )
+        )
+
+
+def sample_image_summaries(limit: int = 10) -> list[sqlite3.Row]:
+    init_db()
+    with connect() as conn:
+        return list(
+            conn.execute(
+                """
+                SELECT
+                    article_images.*,
+                    research_items.title AS article_title,
+                    research_items.source AS article_source
+                FROM article_images
+                JOIN research_items ON research_items.id = article_images.article_id
+                WHERE TRIM(COALESCE(article_images.vision_summary, '')) != ''
+                ORDER BY article_images.vision_quality DESC, research_items.published_at DESC, article_images.image_index ASC
+                LIMIT ?
+                """,
+                (limit,),
+            )
+        )
+
+
+def mark_ai_summary_review(item_id: str, status: str, note: str = "") -> None:
+    with connect() as conn:
+        conn.execute(
+            """
+            UPDATE research_items
+            SET ai_review_status = ?,
+                ai_review_note = ?,
+                updated_at = datetime('now')
+            WHERE id = ?
+            """,
+            (status, note, item_id),
+        )
+
+
+def image_stats_by_article() -> dict[str, dict[str, int]]:
+    init_db()
+    with connect() as conn:
+        rows = list(
+            conn.execute(
+                """
+                SELECT
+                    article_id,
+                    COUNT(*) AS image_count,
+                    SUM(CASE WHEN is_content_image = 1 THEN 1 ELSE 0 END) AS content_image_count,
+                    SUM(CASE WHEN TRIM(COALESCE(vision_summary, '')) != '' THEN 1 ELSE 0 END) AS vision_summary_count,
+                    SUM(CASE WHEN use_for_summary = 1 AND TRIM(COALESCE(vision_summary, '')) != '' THEN 1 ELSE 0 END) AS usable_vision_count
+                FROM article_images
+                GROUP BY article_id
+                """
+            )
+        )
+    return {
+        row["article_id"]: {
+            "image_count": int(row["image_count"] or 0),
+            "content_image_count": int(row["content_image_count"] or 0),
+            "vision_summary_count": int(row["vision_summary_count"] or 0),
+            "usable_vision_count": int(row["usable_vision_count"] or 0),
+        }
+        for row in rows
+    }

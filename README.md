@@ -9,7 +9,7 @@
 - 数据源：本地 WeWe RSS (`http://localhost:4000`) 中已订阅的微信公众号。
 - 数据库：SQLite，默认路径为 `data/research.sqlite`。
 - 输出：主看板 `output/index.html`，日报索引 `output/reports/index.html`。
-- 摘要：本地抽取式摘要已全量生成；AI 深度总结、图片资产索引和视觉摘要已跑通小批量闭环。
+- 摘要：本地抽取式摘要已全量生成；AI 深度总结、图片资产索引、视觉摘要、AI 简报和引用式问答原型已跑通。
 - 总控文档：后续交接、需求池和进度记录统一维护在 `project_control_center.html`。
 
 ## 常用命令
@@ -25,7 +25,11 @@ python -m src.cli test-model
 python -m src.cli test-vision --image-index 1
 python -m src.cli index-images
 python -m src.cli summarize-images --limit 10
+python -m src.cli audit-image-summaries
+python -m src.cli audit-ai-summaries --limit 0
 python -m src.cli deep-summarize --limit 5
+python -m src.cli generate-briefing --limit 8
+python -m src.cli ask "中游制造和权益资产怎么看" --limit 4
 python -m src.cli run-once
 ```
 
@@ -92,6 +96,31 @@ python -m src.cli deep-summarize --limit 1 --resummarize
 ```
 
 `index-images` 会从每篇文章的 `raw_path` 原始 HTML 中提取图片，写入本地 SQLite 的 `article_images` 表，并标记头像、封面、二维码、广告、赞赏图等噪声图。`summarize-images` 只默认处理正文图，调用视觉模型读取图片 URL，写入 `vision_summary`、`vision_model` 和 `vision_summary_at`。后续 `deep-summarize` 会把同一文章已存在的视觉摘要作为补充材料并入最终 AI 深度总结。
+
+视觉摘要可自动复核类型与质量：
+
+```powershell
+python -m src.cli audit-image-summaries
+python -m src.cli audit-ai-summaries --limit 0
+```
+
+视觉摘要会被标记为 `chart`、`table`、`slide`、`text` 或 `noise`，并写入质量分与是否用于后续总结。当前小批量扩量后已有 58 张视觉摘要，其中 52 张可用于总结，6 张噪声图会自动排除。
+
+生成投研简报：
+
+```powershell
+python -m src.cli generate-briefing --limit 8
+```
+
+简报输出到 `output/briefing/latest.html` 和 `output/briefing/latest.json`。生成时会优先使用 AI 深度总结和可用视觉摘要，失败时可加 `--local` 生成本地兜底版。
+
+引用式问答原型：
+
+```powershell
+python -m src.cli ask "中游制造和权益资产怎么看" --limit 4
+```
+
+问答默认只检索已入库研报，回答带文章级引用；证据不足时会说明不足。加 `--local` 可只返回本地检索结果，不调用模型。
 
 ## 公众号接入
 

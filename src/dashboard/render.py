@@ -6,14 +6,15 @@ from datetime import datetime
 from pathlib import Path
 
 from ..config import OUTPUT_DIR
-from ..db import list_items
+from ..db import image_stats_by_article, list_items
 
 
 def render_dashboard(output_path: Path | None = None) -> Path:
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     output_path = output_path or OUTPUT_DIR / "index.html"
     rows = list_items(limit=500)
-    data = [_with_effective_summary(dict(row)) for row in rows]
+    image_stats = image_stats_by_article()
+    data = [_with_effective_summary(dict(row), image_stats.get(row["id"], {})) for row in rows]
     (OUTPUT_DIR / "items.json").write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
     output_path.write_text(_render_html(data), encoding="utf-8")
     return output_path
@@ -145,7 +146,7 @@ def _render_html(items: list[dict]) -> str:
   <header>
     <h1>AI研报助手看板</h1>
     <p class="meta">共 {len(items)} 条内容。数据文件：output/items.json</p>
-    <div class="header-links"><a href="reports/index.html">查看日报索引</a></div>
+    <div class="header-links"><a href="briefing/latest.html">查看最新简报</a><a href="reports/index.html">查看日报索引</a></div>
   </header>
   <main>
     <div class="filters">
@@ -240,6 +241,10 @@ def _render_card(item: dict) -> str:
     ]
     if item.get("ai_summary"):
         chips.append(f"AI总结: {item.get('ai_summary_model') or 'model'}")
+    if item.get("vision_summary_count"):
+        chips.append(f"视觉摘要: {item.get('usable_vision_count', 0)}/{item.get('vision_summary_count')}")
+    elif item.get("content_image_count"):
+        chips.append(f"正文图: {item.get('content_image_count')}")
     if pdf:
         chips.append(f"PDF: {pdf}")
     chip_html = "".join(f"<span class=\"chip\">{html.escape(str(chip))}</span>" for chip in chips if chip)
@@ -273,9 +278,11 @@ def _date_key(value: str) -> str:
         return ""
 
 
-def _with_effective_summary(item: dict) -> dict:
+def _with_effective_summary(item: dict, image_stats: dict | None = None) -> dict:
     ai_summary = (item.get("ai_summary") or "").strip()
     local_summary = (item.get("summary") or "").strip()
     item["effective_summary"] = ai_summary or local_summary
     item["summary_mode"] = "ai" if ai_summary else "local"
+    for key, value in (image_stats or {}).items():
+        item[key] = value
     return item
