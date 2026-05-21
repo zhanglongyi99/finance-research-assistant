@@ -112,7 +112,7 @@ python -m src.cli audit-ai-summaries --limit 0
 python -m src.cli generate-briefing --limit 8
 ```
 
-简报输出到 `output/briefing/latest.html` 和 `output/briefing/latest.json`。生成时会优先使用 AI 深度总结和可用视觉摘要，失败时可加 `--local` 生成本地兜底版。
+AI 简报输出到 `output/briefing/latest.html` 和 `output/briefing/latest.json`。生成时会优先使用 AI 深度总结和可用视觉摘要。失败时可加 `--local` 生成本地兜底版，兜底版输出到 `output/briefing/local.html`，不会覆盖最新 AI 简报。
 
 引用式问答原型：
 

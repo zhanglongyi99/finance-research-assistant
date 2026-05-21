@@ -26,8 +26,9 @@ def generate_briefing(*, limit: int = 12, use_ai: bool = True) -> Path:
         payload["briefing"] = _local_briefing(payload)
         payload["briefing_mode"] = "local"
 
-    json_path = BRIEFING_DIR / "latest.json"
-    html_path = BRIEFING_DIR / "latest.html"
+    output_stem = "latest" if use_ai else "local"
+    json_path = BRIEFING_DIR / f"{output_stem}.json"
+    html_path = BRIEFING_DIR / f"{output_stem}.html"
     json_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     html_path.write_text(_render_html(payload), encoding="utf-8")
     return html_path

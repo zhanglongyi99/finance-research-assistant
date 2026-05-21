@@ -354,7 +354,7 @@
   <main>
     <header>
       <h1>财经助手项目总控台</h1>
-      <p class="subtitle">更新时间：2026-05-21 11:45（Asia/Shanghai）。本文件是后续跨窗口交接、进度同步、需求整理和产品方向沉淀的第一入口。</p>
+      <p class="subtitle">更新时间：2026-05-21 12:00（Asia/Shanghai）。本文件是后续跨窗口交接、进度同步、需求整理和产品方向沉淀的第一入口。</p>
       <p class="note"><strong>当前定位：</strong>一个以研报知识库为基础、以每日 AI 简报和引用式问答为核心的个人财经研究助手。当前开发主线仍以微信公众号研报为核心，行情、新闻、提醒和实时数据先作为未来模块预留。</p>
     </header>
 
@@ -380,12 +380,12 @@
           </tr>
         </thead>
         <tbody>
-          <tr><td>代码与远程</td><td><span class="pill good">本轮待提交</span></td><td>本轮代码新增质量闸门、AI 简报和问答原型；源码与文档通过验证后推送到 GitHub。</td></tr>
+          <tr><td>代码与远程</td><td><span class="pill good">已同步</span></td><td>本地 <code>main</code> 与 <code>origin/main</code> 对齐；最新提交为 <code>949f783 feat: add briefing and cited qa prototypes</code>。</td></tr>
           <tr><td>数据底座</td><td><span class="pill good">稳定</span></td><td>SQLite 当前 180 条公众号文章，全部为 <code>summarized</code>，覆盖 8 个生产公众号来源；本轮未新增采集数据。</td></tr>
           <tr><td>AI 深度总结</td><td><span class="pill good">小批量可用</span></td><td>已有 5 条 <code>ai_summary</code>；自动结构复核 4 条通过，1 条需人工确认。</td></tr>
           <tr><td>图片与视觉摘要</td><td><span class="pill good">小批量扩量完成</span></td><td><code>article_images</code> 已入库 3819 张图片，其中 3079 张正文图；已有 58 张 <code>vision_summary</code>，自动复核为 50 张图表、1 张目录/幻灯片、1 张表格、6 张噪声图。</td></tr>
           <tr><td>开源边界</td><td><span class="pill good">保持干净</span></td><td><code>.env</code>、<code>data/</code>、<code>output/</code>、<code>logs/</code>、<code>pdfs/</code> 仍不进入 Git 跟踪；本页不记录密钥或正文数据。</td></tr>
-          <tr><td>下一焦点</td><td><span class="pill plan">云端化前收口</span></td><td>AI 简报和引用式问答原型已跑通；下一步应人工复核 6 张噪声图、1 条需复核 AI 总结，以及最新简报页质量。</td></tr>
+          <tr><td>下一焦点</td><td><span class="pill plan">人工复核</span></td><td>AI 简报和引用式问答原型已跑通并推送；下一步应人工复核 6 张噪声图、1 条需复核 AI 总结，以及最新简报页质量。</td></tr>
         </tbody>
       </table>
     </section>
@@ -410,7 +410,7 @@
           <tr><td>引用式问答</td><td><span class="pill good">原型已跑通</span></td><td>新增 <code>ask</code> 命令，基于 SQLite 检索和模型生成文章级引用回答；已用“中游制造和权益资产怎么看”完成端到端验证。</td></tr>
           <tr><td>日报</td><td><span class="pill good">架构完成</span></td><td>有新增文章时生成本轮日报；已有 2026-05-20 测试日报。</td></tr>
           <tr><td>自动化</td><td><span class="pill good">已启用</span></td><td>每天 08:45 和 17:15 运行 <code>python -m src.cli run-once</code>。</td></tr>
-          <tr><td>Git/GitHub 开源</td><td><span class="pill good">持续维护</span></td><td>本地 <code>main</code> 持续推送到远程 <code>origin/main</code>；仓库地址：<a href="https://github.com/zhanglongyi99/finance-research-assistant">GitHub 仓库</a>。</td></tr>
+          <tr><td>Git/GitHub 开源</td><td><span class="pill good">已发布并同步</span></td><td>本地 <code>main</code> 与远程 <code>origin/main</code> 对齐，最新提交为 <code>949f783</code>；仓库地址：<a href="https://github.com/zhanglongyi99/finance-research-assistant">GitHub 仓库</a>。</td></tr>
           <tr><td>云端化</td><td><span class="pill warn">待设计</span></td><td>当前仍是本地脚本、SQLite、静态 HTML 和本地 WeWe RSS 的组合。</td></tr>
         </tbody>
       </table>
@@ -636,6 +636,10 @@
     <section>
       <h2>更新日志</h2>
       <div class="timeline">
+        <div>2026-05-21 11:52</div>
+        <div>完成当前进度复核并更新总控台：确认本地 <code>main</code> 与 <code>origin/main</code> 对齐，最新提交为 <code>949f783</code>；当前数据库 180 条文章、5 条 AI 深度总结、3819 张图片、3079 张正文图、58 张视觉摘要，其中 52 张可用于总结、6 张自动标记为噪声图。当前已完成云端化设计前的核心原型：质量闸门、AI 简报、引用式问答和增强看板。</div>
+        <div>2026-05-21 12:00</div>
+        <div>修正简报生成验证流程：确认此前 <code>generate-briefing --local</code> 会覆盖 <code>output/briefing/latest.html</code>，导致页面只显示本地兜底框架；已重新调用模型生成 AI 版简报，并调整代码使本地兜底输出到 <code>output/briefing/local.html</code>，避免覆盖最新 AI 简报。</div>
         <div>2026-05-21 11:45</div>
         <div>按云端化设计前的计划继续推进：新增视觉摘要与 AI 总结自动复核字段和命令，视觉摘要扩量至 58 张并自动排除 6 张噪声图；新增 <code>generate-briefing</code> 生成 AI 投研简报，新增 <code>ask</code> 做已入库研报的文章级引用问答；主看板已显示 AI/视觉摘要状态并链接最新简报。运行中发现第三方模型网关有 2 张图片请求失败，已作为可重试的上游偶发错误处理。</div>
         <div>2026-05-21 11:18</div>
