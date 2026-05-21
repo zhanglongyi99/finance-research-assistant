@@ -91,23 +91,44 @@ def _ai_briefing(payload: dict) -> str:
 链接：{article['url']}"""
         )
 
-    prompt = f"""请基于以下已入库财经研报材料，生成一份投研晨会式简报。
+    prompt = f"""请基于以下已入库财经研报材料，生成一份“先结论、后分领域”的投研简报。
 只使用材料中的信息，不要编造未出现的事实。引用文章时使用 [序号]。
 
-输出格式：
-一、今日总览
-- 3-5 条，概括最重要的宏观、政策、资产或行业线索
+重要要求：
+- 不要平均介绍每篇文章，也不要按文章顺序堆摘要。
+- 先判断本期最重要的 1 条主线，再提炼 2-3 条次级主线。
+- 如果多篇文章都在讲科技资产、AI 或中游制造，请合并成一个主题，不要重复。
+- 每条观点都要尽量说明“为什么重要”和“影响什么资产/行业”。
+- 对材料证据不足的地方要写成“待验证”，不要强行下结论。
+- 总字数控制在 750-1100 个中文字符，宁可少而清楚。
+- 不要罗列过多行业名称；同一条观点最多举 3 个代表行业或资产。
+- 分领域观点只保留有信息增量的领域，每个领域 1-2 条，每条不超过 80 个中文字符。
+- 本期引用最多列 5 篇最关键材料，不要逐篇凑满。
 
-二、资产与行业含义
-- 权益：
-- 债券/利率：
-- 汇率/商品/其他：
+输出格式必须严格使用以下标题：
+一句话结论：
+用 1 句话说明本期最核心判断，不超过 60 个中文字符。
 
-三、需要跟踪的问题
-- 3-5 条，写成后续观察清单
+最重要的 3 件事：
+- 主线1：观点 + 原因 + 影响方向 + 引用，不超过 100 个中文字符
+- 主线2：观点 + 原因 + 影响方向 + 引用，不超过 100 个中文字符
+- 主线3：观点 + 原因 + 影响方向 + 引用，不超过 100 个中文字符
 
-四、引用文章
-- 按 [序号] 标出最相关的文章标题
+分领域观点：
+宏观与政策：
+- ...
+权益与行业：
+- ...
+固收与利率：
+- ...
+汇率、商品与海外：
+- ...
+
+需要跟踪：
+- 3 条后续观察清单，按重要性排序。
+
+本期引用：
+- [序号] 文章标题：一句话说明这篇材料贡献了什么证据。
 
 材料：
 {chr(10).join(materials)}
@@ -152,7 +173,14 @@ def _render_html(payload: dict) -> str:
     a {{ color: #126c68; text-decoration: none; }}
     a:hover {{ text-decoration: underline; }}
     .muted {{ color: #5f6b7a; }}
-    .briefing {{ white-space: pre-wrap; }}
+    .briefing {{ display: grid; gap: 12px; }}
+    .briefing-lede {{ border: 1px solid #c7dedb; background: #eef8f6; border-radius: 8px; padding: 14px 16px; color: #123c3a; font-weight: 700; }}
+    .briefing-section {{ border: 1px solid #d9e1ea; border-radius: 8px; padding: 14px 16px; background: #fff; }}
+    .briefing-section h3 {{ margin: 0 0 8px; font-size: 16px; }}
+    .briefing-section h4 {{ margin: 12px 0 6px; font-size: 14px; color: #126c68; }}
+    .briefing-section ul {{ margin: 0; padding-left: 18px; }}
+    .briefing-section li {{ margin: 6px 0; }}
+    .briefing-section p {{ margin: 6px 0; }}
     .grid {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start; }}
     .card {{ border: 1px solid #d9e1ea; border-radius: 8px; padding: 14px 16px; background: #fff; }}
     .card h3 {{ font-size: 16px; margin-bottom: 10px; }}
@@ -182,7 +210,7 @@ def _render_html(payload: dict) -> str:
     </header>
     <section>
       <h2>投研简报</h2>
-      <div class="briefing">{html.escape(payload['briefing'])}</div>
+      <div class="briefing">{_render_briefing_html(payload['briefing'])}</div>
     </section>
     <section>
       <h2>引用材料</h2>
@@ -213,6 +241,88 @@ def _render_article(index: int, article: dict) -> str:
     <div class="full-summary">{full_summary}</div>
   </details>
 </div>"""
+
+
+def _render_briefing_html(briefing: str) -> str:
+    lines = [line.strip() for line in (briefing or "").splitlines() if line.strip()]
+    if not lines:
+        return '<div class="briefing-section"><p>暂无简报。</p></div>'
+
+    sections: list[tuple[str, list[str]]] = []
+    current_title = ""
+    current_lines: list[str] = []
+    lede = ""
+
+    def flush() -> None:
+        nonlocal current_title, current_lines
+        if current_title or current_lines:
+            sections.append((current_title or "简报", current_lines))
+        current_title = ""
+        current_lines = []
+
+    for line in lines:
+        title = _briefing_title(line)
+        if title:
+            flush()
+            current_title = title
+            remainder = _title_remainder(line, title)
+            if title == "一句话结论" and remainder:
+                lede = remainder
+            elif remainder:
+                current_lines.append(remainder)
+            continue
+        if current_title == "一句话结论" and not lede:
+            lede = line.strip(" -")
+            continue
+        current_lines.append(line)
+    flush()
+
+    parts = []
+    if lede:
+        parts.append(f'<div class="briefing-lede">{html.escape(lede)}</div>')
+    for title, body_lines in sections:
+        if title == "一句话结论":
+            continue
+        parts.append(_render_briefing_section(title, body_lines))
+    return "".join(parts) or '<div class="briefing-section"><p>暂无简报。</p></div>'
+
+
+def _render_briefing_section(title: str, lines: list[str]) -> str:
+    blocks = []
+    items: list[str] = []
+
+    def flush_items() -> None:
+        nonlocal items
+        if items:
+            item_html = "".join(f"<li>{html.escape(item)}</li>" for item in items if item)
+            blocks.append(f"<ul>{item_html}</ul>")
+        items = []
+
+    for line in lines:
+        if line.startswith("- "):
+            items.append(line[2:].strip())
+        elif re.match(r"^[\u4e00-\u9fa5、/]+：$", line):
+            flush_items()
+            blocks.append(f"<h4>{html.escape(line.rstrip('：'))}</h4>")
+        else:
+            flush_items()
+            blocks.append(f"<p>{html.escape(line)}</p>")
+    flush_items()
+    return f'<div class="briefing-section"><h3>{html.escape(title)}</h3>{"".join(blocks)}</div>'
+
+
+def _briefing_title(line: str) -> str:
+    normalized = line.strip().strip("#").strip()
+    for title in ("一句话结论", "最重要的 3 件事", "最重要的3件事", "分领域观点", "需要跟踪", "本期引用"):
+        if normalized.startswith(title):
+            return "最重要的 3 件事" if title == "最重要的3件事" else title
+    return ""
+
+
+def _title_remainder(line: str, title: str) -> str:
+    value = line.strip().strip("#").strip()
+    value = value[len(title):].strip()
+    return value.strip("：: ").strip()
 
 
 def _summary_takeaways(summary: str, *, limit: int = 2) -> list[str]:

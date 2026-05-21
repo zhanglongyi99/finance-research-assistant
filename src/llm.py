@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import http.client
 import json
 import os
+import ssl
+import time
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
@@ -69,16 +72,24 @@ class OpenAICompatibleClient:
                 "Accept": "application/json",
             },
         )
-        try:
-            with urllib.request.urlopen(request, timeout=self.settings.timeout) as response:
-                data = json.loads(response.read().decode("utf-8", errors="replace"))
-        except urllib.error.HTTPError as error:
-            detail = error.read().decode("utf-8", errors="replace")
-            raise RuntimeError(f"模型 API 请求失败：HTTP {error.code} {detail[:500]}") from error
-        except urllib.error.URLError as error:
-            raise RuntimeError(f"模型 API 连接失败：{error}") from error
-
+        data = self._post_json(request)
         return _extract_content(data)
+
+    def _post_json(self, request: urllib.request.Request) -> dict[str, Any]:
+        last_error: BaseException | None = None
+        for attempt in range(3):
+            try:
+                with urllib.request.urlopen(request, timeout=self.settings.timeout) as response:
+                    return json.loads(response.read().decode("utf-8", errors="replace"))
+            except urllib.error.HTTPError as error:
+                detail = error.read().decode("utf-8", errors="replace")
+                raise RuntimeError(f"模型 API 请求失败：HTTP {error.code} {detail[:500]}") from error
+            except (urllib.error.URLError, http.client.RemoteDisconnected, TimeoutError, ssl.SSLError) as error:
+                last_error = error
+                if attempt < 2:
+                    time.sleep(2**attempt)
+                    continue
+        raise RuntimeError(f"模型 API 连接失败，已重试 3 次：{last_error}") from last_error
 
     def vision(self, *, image_url: str, prompt: str, max_tokens: int | None = 1200) -> str:
         if self.settings.wire_api == "responses":
@@ -153,7 +164,9 @@ def load_model_settings() -> ModelSettings:
     if not model:
         missing.append("AI_MODEL")
     if missing:
-        raise ModelConfigError("缺少模型配置：" + "、".join(missing) + "。请复制 .env.example 为 .env 后填写。")
+        raise ModelConfigError(
+            "缺少模型配置：" + "、".join(missing) + "。请复制 .env.example 为 .env 后填写。"
+        )
     if wire_api not in {"responses", "chat"}:
         raise ModelConfigError("AI_WIRE_API 只支持 responses 或 chat。")
     return ModelSettings(

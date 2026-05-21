@@ -57,6 +57,7 @@ AI_REASONING_EFFORT=medium
 
 默认模型按当前规划设为 `gpt-5.5`，推理强度为 `medium`。如果第三方网关只支持 Chat Completions，将 `AI_WIRE_API` 改为 `chat`。
 `AI_SUMMARY_DIRECT_MAX_CHARS` 控制单次直发正文长度，默认 `18000`。超过该长度的长文会按 `AI_SUMMARY_CHUNK_CHARS` 分段交给 API 提取要点，再由 API 汇总成最终深度总结，避免单次请求过大导致网关断连。
+模型请求会对连接断开、TLS 握手失败和超时等瞬时网络错误做最多 3 次重试；HTTP 业务错误会直接报出，便于定位配置或额度问题。
 
 测试连通性：
 
@@ -112,7 +113,7 @@ python -m src.cli audit-ai-summaries --limit 0
 python -m src.cli generate-briefing --limit 8
 ```
 
-AI 简报输出到 `output/briefing/latest.html` 和 `output/briefing/latest.json`。生成时会优先使用 AI 深度总结和可用视觉摘要。失败时可加 `--local` 生成本地兜底版，兜底版输出到 `output/briefing/local.html`，不会覆盖最新 AI 简报。
+AI 简报输出到 `output/briefing/latest.html` 和 `output/briefing/latest.json`。生成时会优先使用 AI 深度总结和可用视觉摘要，并按“短结论、三条主线、分领域观点、跟踪事项、关键引用”的框架组织内容。失败时可加 `--local` 生成本地兜底版，兜底版输出到 `output/briefing/local.html`，不会覆盖最新 AI 简报。
 
 引用式问答原型：
 

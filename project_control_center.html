@@ -354,7 +354,7 @@
   <main>
     <header>
       <h1>财经助手项目总控台</h1>
-      <p class="subtitle">更新时间：2026-05-21 12:00（Asia/Shanghai）。本文件是后续跨窗口交接、进度同步、需求整理和产品方向沉淀的第一入口。</p>
+      <p class="subtitle">更新时间：2026-05-21 12:21（Asia/Shanghai）。本文件是后续跨窗口交接、进度同步、需求整理和产品方向沉淀的第一入口。</p>
       <p class="note"><strong>当前定位：</strong>一个以研报知识库为基础、以每日 AI 简报和引用式问答为核心的个人财经研究助手。当前开发主线仍以微信公众号研报为核心，行情、新闻、提醒和实时数据先作为未来模块预留。</p>
     </header>
 
@@ -385,7 +385,7 @@
           <tr><td>AI 深度总结</td><td><span class="pill good">小批量可用</span></td><td>已有 5 条 <code>ai_summary</code>；自动结构复核 4 条通过，1 条需人工确认。</td></tr>
           <tr><td>图片与视觉摘要</td><td><span class="pill good">小批量扩量完成</span></td><td><code>article_images</code> 已入库 3819 张图片，其中 3079 张正文图；已有 58 张 <code>vision_summary</code>，自动复核为 50 张图表、1 张目录/幻灯片、1 张表格、6 张噪声图。</td></tr>
           <tr><td>开源边界</td><td><span class="pill good">保持干净</span></td><td><code>.env</code>、<code>data/</code>、<code>output/</code>、<code>logs/</code>、<code>pdfs/</code> 仍不进入 Git 跟踪；本页不记录密钥或正文数据。</td></tr>
-          <tr><td>下一焦点</td><td><span class="pill plan">人工复核</span></td><td>AI 简报和引用式问答原型已跑通并推送；下一步应人工复核 6 张噪声图、1 条需复核 AI 总结，以及最新简报页质量。</td></tr>
+          <tr><td>下一焦点</td><td><span class="pill plan">人工复核</span></td><td>新版 AI 简报已改为“先结论、三条主线、分领域观点、跟踪事项、关键引用”的短版框架；下一步应人工复核 6 张噪声图、1 条需复核 AI 总结，以及新版简报是否适合日常阅读。</td></tr>
         </tbody>
       </table>
     </section>
@@ -406,7 +406,7 @@
           <tr><td>摘要</td><td><span class="pill good">AI 小批量已跑通</span></td><td>180 条均已有本地抽取式摘要；已新增独立 <code>ai_summary</code> 字段，并用 <code>gpt-5.5</code> 生成 5 条 AI 深度总结，其中 1 条已重跑并合并视觉摘要。</td></tr>
           <tr><td>图片资产</td><td><span class="pill good">索引、扩量与质量闸门已跑通</span></td><td>新增视觉摘要自动分类与质量标记；当前 58 张视觉摘要中 52 张可用于总结，6 张噪声图自动排除。</td></tr>
           <tr><td>看板</td><td><span class="pill good">可用并增强</span></td><td>静态主看板支持来源、分类、状态、搜索、日期区间和排序；已显示 AI/视觉摘要状态，并链接最新简报。</td></tr>
-          <tr><td>AI 简报</td><td><span class="pill good">原型已跑通</span></td><td>新增 <code>generate-briefing</code>，输出 <code>output/briefing/latest.html</code>，基于近期文章、AI 总结和可用视觉摘要生成投研简报。</td></tr>
+          <tr><td>AI 简报</td><td><span class="pill good">结构已优化</span></td><td><code>generate-briefing</code> 已改为短版投研框架：一句话结论、最重要的 3 件事、分领域观点、需要跟踪和本期引用；最新 AI 版简报约 867 字，输出到 <code>output/briefing/latest.html</code>。</td></tr>
           <tr><td>引用式问答</td><td><span class="pill good">原型已跑通</span></td><td>新增 <code>ask</code> 命令，基于 SQLite 检索和模型生成文章级引用回答；已用“中游制造和权益资产怎么看”完成端到端验证。</td></tr>
           <tr><td>日报</td><td><span class="pill good">架构完成</span></td><td>有新增文章时生成本轮日报；已有 2026-05-20 测试日报。</td></tr>
           <tr><td>自动化</td><td><span class="pill good">已启用</span></td><td>每天 08:45 和 17:15 运行 <code>python -m src.cli run-once</code>。</td></tr>
@@ -606,7 +606,7 @@
       <ol>
         <li><strong>P0：GitHub 仓库首轮复查。</strong> 在网页端确认 README、源码、配置模板和文档展示正常，并确认未包含运行数据或密钥。</li>
         <li><strong>P0：人工复核闸门。</strong> 抽查 58 张视觉摘要中的 6 张噪声图、52 张可用图表/目录/表格，以及 1 条 <code>needs_review</code> 的 AI 深度总结。</li>
-        <li><strong>P0：简报质量复核。</strong> 打开 <code>output/briefing/latest.html</code>，确认 AI 简报是否适合进入每日自动化；若质量稳定，再把 <code>generate-briefing</code> 加入 <code>run-once</code> 或定时任务。</li>
+        <li><strong>P0：简报质量复核。</strong> 打开 <code>output/briefing/latest.html</code>，重点确认“短结论 + 三条主线 + 分领域观点”的新版阅读体验；若质量稳定，再把 <code>generate-briefing</code> 加入 <code>run-once</code> 或定时任务。</li>
         <li><strong>P1：问答原型增强。</strong> 当前是 SQLite 关键词/ngram 检索 + 文章级引用；后续可增加向量检索、对话历史和引用卡片 UI。</li>
         <li><strong>P1：平台 UI 改造。</strong> 现有静态看板已加入简报入口和 AI/视觉摘要状态；后续再整合问答入口与平台导航。</li>
         <li><strong>P1：云端化设计。</strong> 确认部署方式、数据库方案、WeWe RSS 位置、只读访问权限和少量用户访问路径。</li>
@@ -636,6 +636,8 @@
     <section>
       <h2>更新日志</h2>
       <div class="timeline">
+        <div>2026-05-21 12:21</div>
+        <div>根据阅读体验反馈优化投研简报：收紧模型提示词，要求先给一句话结论，再提炼三条主线、分领域观点、三条跟踪事项和最多五篇关键引用；页面渲染改为结论高亮卡片和分块展示。已重新调用 <code>gpt-5.5</code> 生成 AI 版 <code>output/briefing/latest.html</code>，当前约 867 字。</div>
         <div>2026-05-21 11:52</div>
         <div>完成当前进度复核并更新总控台：确认本地 <code>main</code> 与 <code>origin/main</code> 对齐，最新提交为 <code>949f783</code>；当前数据库 180 条文章、5 条 AI 深度总结、3819 张图片、3079 张正文图、58 张视觉摘要，其中 52 张可用于总结、6 张自动标记为噪声图。当前已完成云端化设计前的核心原型：质量闸门、AI 简报、引用式问答和增强看板。</div>
         <div>2026-05-21 12:00</div>
